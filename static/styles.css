@@ -1,167 +1,170 @@
 /* static/styles.css */
+
+/* ---------------------------
+   Base / page
+---------------------------- */
 :root{
-  --bg: #eef1f5;
+  --bg: #f3f4f6;
   --card: #ffffff;
   --text: #0f172a;
   --muted: #475569;
-  --border: rgba(15, 23, 42, 0.12);
-  --soft: rgba(15, 23, 42, 0.06);
-  --focus: rgba(37, 99, 235, 0.25);
+  --line: #e5e7eb;
   --shadow: 0 12px 30px rgba(2, 6, 23, 0.08);
-  --radius: 18px;
+  --radius: 16px;
+  --radius-sm: 12px;
+  --accent: #2563eb;
+  --accent-2: #1d4ed8;
 }
 
 *{ box-sizing: border-box; }
 html, body{ height: 100%; }
 body{
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
   color: var(--text);
   background: var(--bg);
 }
 
-.page{
-  padding: 28px 16px 60px;
-  display: flex;
-  justify-content: center;
+/* Helpful if you have a base layout container */
+.container{
+  width: min(980px, 92vw);
+  margin: 0 auto;
+  padding: 28px 0 60px;
 }
 
-.card{
-  width: min(980px, 100%);
+/* ---------------------------
+   Buttons
+---------------------------- */
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.btn:hover{
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.10);
+  transform: translateY(-1px);
+}
+.btn:active{ transform: translateY(0); box-shadow: none; }
+
+.btn-primary{
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover{
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+.btn-row{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+/* ---------------------------
+   Resume Preview Card
+---------------------------- */
+.resume-wrap{
+  width: min(900px, 92vw);
+  margin: 28px auto 60px;
+}
+.resume-card{
   background: var(--card);
-  border: 1px solid var(--soft);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 22px 22px 26px;
+  padding: 26px;
 }
 
-.topnav{
+.resume-top{
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
 }
 
-.pill{
-  text-decoration: none;
-  color: var(--text);
-  font-size: 13px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.05);
-}
-.pill:hover{ background: rgba(15, 23, 42, 0.06); }
-.pill.active{
-  background: rgba(37, 99, 235, 0.10);
-  border-color: rgba(37, 99, 235, 0.18);
-}
-
-.hero h1{
-  margin: 6px 0 6px;
-  font-size: 44px;
-  line-height: 1.05;
+.resume-name{
+  font-size: 34px;
+  line-height: 1.1;
+  margin: 0;
   letter-spacing: -0.02em;
 }
-.sub{
-  margin: 0 0 18px;
+
+.resume-meta{
   color: var(--muted);
   font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.meta-pill{
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  border-radius: 999px;
 }
 
-.form{
-  margin-top: 8px;
+.resume-section{
+  margin-top: 18px;
 }
-
-.grid2{
-  display: grid;
-  gap: 14px;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 860px){
-  .grid2{ grid-template-columns: 1fr 1fr; }
-}
-
-.field label{
-  display: block;
-  font-weight: 650;
-  font-size: 13px;
-  margin-bottom: 6px;
-  color: var(--text);
-}
-
-.field input,
-.field select,
-.field textarea{
-  width: 100%;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.92);
-  border-radius: 12px;
-  padding: 12px 12px;
-  font-size: 14px;
-  outline: none;
-  color: var(--text);
-}
-
-.field textarea{
-  resize: vertical;
-  min-height: 92px;
-}
-
-.field input:focus,
-.field select:focus,
-.field textarea:focus{
-  box-shadow: 0 0 0 4px var(--focus);
-  border-color: rgba(37, 99, 235, 0.35);
-}
-
-.hint{
-  margin-top: 6px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.soft-divider{
-  height: 1px;
-  background: rgba(15, 23, 42, 0.08);
-  margin: 18px 0 14px;
-}
-
-.muted-title{
-  font-size: 12px;
+.resume-section h2{
+  font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--muted);
-  margin: 0 0 12px;
+  color: #1f2937;
+  margin: 0 0 10px;
+}
+.resume-body{
+  font-size: 15px;
+  line-height: 1.6;
+  color: #111827;
 }
 
-.actions{
+.skills-badges{
   display: flex;
-  gap: 10px;
-  margin-top: 16px;
   flex-wrap: wrap;
+  gap: 8px;
+}
+.skill-badge{
+  border: 1px solid var(--line);
+  background: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #0f172a;
 }
 
-.btn{
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  background: rgba(15, 23, 42, 0.04);
-  color: var(--text);
-  padding: 11px 16px;
-  border-radius: 12px;
-  font-weight: 650;
-  cursor: pointer;
-  font-size: 14px;
+.bullets{
+  margin: 0;
+  padding-left: 18px;
 }
-.btn:hover{ background: rgba(15, 23, 42, 0.06); }
+.bullets li{
+  margin: 6px 0;
+}
 
-.btn.primary{
-  background: rgba(37, 99, 235, 0.92);
-  color: white;
-  border-color: rgba(37, 99, 235, 0.92);
+/* Keep it clean on small screens */
+@media (max-width: 520px){
+  .resume-card{ padding: 18px; }
+  .resume-name{ font-size: 28px; }
 }
-.btn.primary:hover{
-  background: rgba(37, 99, 235, 1);
-}
+
+
 
 
 

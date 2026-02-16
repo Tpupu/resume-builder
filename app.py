@@ -1,128 +1,150 @@
-FILE: app.py
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from io import BytesIO
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 
-def _split_wins(wins: str) -> list[str]:
-    if not wins:
-        return []
-    raw = wins.replace("•", ",").replace(";", ",")
-    parts = [p.strip() for p in raw.split(",") if p.strip()]
-    # Keep it readable (avoid huge lists)
-    return parts[:8]
-
-
-def _clean_commas(s: str) -> str:
+# ----------------------------
+# Helpers
+# ----------------------------
+def _split_csv(s: str) -> list[str]:
     if not s:
-        return ""
-    parts = [p.strip() for p in s.split(",") if p.strip()]
-    # remove duplicates while preserving order
-    seen = set()
-    out = []
-    for p in parts:
-        key = p.lower()
-        if key not in seen:
-            seen.add(key)
-            out.append(p)
-    return ", ".join(out)
+        return []
+    items = []
+    for part in s.split(","):
+        p = part.strip()
+        if p:
+            items.append(p)
+    return items
 
 
-def _fallback_skills(target_title: str, strengths: str) -> str:
-    base = _clean_commas(strengths)
-    common = []
-
-    t = (target_title or "").lower()
-
-    if "manager" in t or "area" in t or "supervisor" in t:
-        common = [
-            "Team Leadership",
-            "Coaching & Development",
-            "Process Improvement",
-            "Performance Tracking",
-            "Safety & Compliance",
-            "Problem Solving",
-            "Shift Planning",
-            "Communication",
-        ]
-    elif "front desk" in t or "hotel" in t or "guest" in t:
-        common = [
-            "Customer Service",
-            "Front Desk Operations",
-            "Conflict Resolution",
-            "Scheduling",
-            "Cash Handling",
-            "Communication",
-            "Attention to Detail",
-        ]
-    elif "it" in t or "support" in t or "help desk" in t:
-        common = [
-            "Troubleshooting",
-            "Customer Support",
-            "Ticketing",
-            "Documentation",
-            "Windows",
-            "Networking Basics",
-            "Communication",
-        ]
-    else:
-        common = [
-            "Communication",
-            "Problem Solving",
-            "Time Management",
-            "Teamwork",
-            "Adaptability",
-        ]
-
-    if base:
-        return _clean_commas(base + ", " + ", ".join(common))
-    return _clean_commas(", ".join(common))
+def _safe_template_name(t: str) -> str:
+    t = (t or "classic").strip().lower()
+    allowed = {"classic", "modern", "compact"}
+    return t if t in allowed else "classic"
 
 
-def _generate_summary(target_title: str, years_exp: str, strengths: str, wins: str) -> str:
-    title = (target_title or "Professional").strip()
-    yrs = (years_exp or "").strip()
-    strg = _clean_commas(strengths)
-    wins_list = _split_wins(wins)
+def _auto_summary(target_title: str, years: str, strengths_csv: str, wins_csv: str) -> str:
+    title = (target_title or "").strip()
+    yrs = (years or "").strip()
+    strengths = _split_csv(strengths_csv)
+    wins = _split_csv(wins_csv)
 
-    pieces = []
-
+    parts = []
+    if title:
+        parts.append(f"{title}")
     if yrs:
-        pieces.append(f"{title} with {yrs} years of experience.")
-    else:
-        pieces.append(f"{title} with proven experience.")
+        parts.append(f"with {yrs} years of experience")
+    head = " ".join(parts).strip()
+    if head:
+        head += "."
 
-    if strg:
-        pieces.append(f"Strengths include {strg}.")
-
-    if wins_list:
-        # turn first 1–2 wins into a sentence
-        first_two = wins_list[:2]
-        if len(first_two) == 1:
-            pieces.append(f"Known for {first_two[0]}.")
-        else:
-            pieces.append(f"Known for {first_two[0]} and {first_two[1]}.")
-
-    pieces.append("Focused on reliable execution, clear communication, and strong results.")
-    return " ".join(pieces).strip()
+    s2 = ""
+    if strengths:
+        s2 = f"Known for {', '.join(strengths[:4])}."
+    s3 = ""
+    if wins:
+        s3 = f"Recent wins: {', '.join(wins[:3])}."
+    out = " ".join([x for x in [head, s2, s3] if x]).strip()
+    return out or "Reliable professional with a focus on results, teamwork, and continuous improvement."
 
 
-def _pick_template(choice: str) -> str:
-    c = (choice or "classic").lower().strip()
-    if c not in {"classic", "modern", "compact"}:
-        c = "classic"
-    return c
+def _make_pdf(name: str, email: str, phone: str, summary: str, skills: list[str], highlights: list[str]) -> bytes:
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=LETTER)
+    width, height = LETTER
+
+    x = 0.9 * inch
+    y = height - 0.9 * inch
+
+    # Header
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(x, y, name or "Resume")
+    y -= 0.35 * inch
+
+    c.setFont("Helvetica", 10)
+    meta = " | ".join([p for p in [email, phone] if p])
+    if meta:
+        c.drawString(x, y, meta)
+        y -= 0.35 * inch
+
+    # Summary
+    if summary:
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(x, y, "Professional Summary")
+        y -= 0.2 * inch
+        c.setFont("Helvetica", 10)
+
+        # simple wrap
+        max_width = width - (2 * x)
+        words = summary.split()
+        line = ""
+        for w in words:
+            test = (line + " " + w).strip()
+            if c.stringWidth(test, "Helvetica", 10) <= max_width:
+                line = test
+            else:
+                c.drawString(x, y, line)
+                y -= 0.18 * inch
+                line = w
+        if line:
+            c.drawString(x, y, line)
+            y -= 0.3 * inch
+
+    # Skills
+    if skills:
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(x, y, "Skills")
+        y -= 0.2 * inch
+        c.setFont("Helvetica", 10)
+
+        for s in skills[:18]:
+            c.drawString(x, y, f"• {s}")
+            y -= 0.18 * inch
+            if y < 1.0 * inch:
+                c.showPage()
+                y = height - 0.9 * inch
+                c.setFont("Helvetica", 10)
+
+        y -= 0.15 * inch
+
+    # Highlights
+    if highlights:
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(x, y, "Highlights")
+        y -= 0.2 * inch
+        c.setFont("Helvetica", 10)
+
+        for h in highlights[:18]:
+            c.drawString(x, y, f"• {h}")
+            y -= 0.18 * inch
+            if y < 1.0 * inch:
+                c.showPage()
+                y = height - 0.9 * inch
+                c.setFont("Helvetica", 10)
+
+    c.save()
+    buf.seek(0)
+    return buf.read()
+
+
+# ----------------------------
+# Routes
+# ----------------------------
+@app.get("/favicon.ico")
+def favicon():
+    return Response(status_code=204)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -131,184 +153,84 @@ def home(request: Request):
 
 
 @app.post("/build", response_class=HTMLResponse)
-def build_resume(
-    request: Request,
-    full_name: str = Form(...),
-    email: str = Form(...),
-    phone: str = Form(""),
-    template_choice: str = Form("classic"),
-    target_title: str = Form(""),
-    years_exp: str = Form(""),
-    strengths: str = Form(""),
-    wins: str = Form(""),
-    summary: str = Form(""),
-    skills: str = Form(""),
-):
-    template_choice = _pick_template(template_choice)
+async def build_resume(request: Request):
+    form = await request.form()
 
-    summary_clean = (summary or "").strip()
-    if not summary_clean:
-        summary_clean = _generate_summary(target_title, years_exp, strengths, wins)
+    name = (form.get("name") or "").strip()
+    email = (form.get("email") or "").strip()
+    phone = (form.get("phone") or "").strip()
 
-    skills_clean = _clean_commas((skills or "").strip())
-    if not skills_clean:
-        skills_clean = _fallback_skills(target_title, strengths)
+    # IMPORTANT: this must match the <select name="template"> in index.html
+    template_choice = _safe_template_name(form.get("template"))
 
-    wins_list = _split_wins(wins)
-    wins_joined = "||".join(wins_list)
+    # Guided inputs (used to auto-generate summary if summary is blank)
+    target_title = (form.get("target_title") or "").strip()
+    years = (form.get("years") or "").strip()
+    strengths_csv = (form.get("strengths_csv") or "").strip()
+    wins_csv = (form.get("wins_csv") or "").strip()
 
-    data = {
-        "full_name": full_name.strip(),
-        "email": email.strip(),
-        "phone": phone.strip(),
-        "template_choice": template_choice,
-        "summary": summary_clean,
-        "skills_line": skills_clean,
-        "wins_list": wins_list,
-        "wins_joined": wins_joined,
-    }
+    summary = (form.get("summary") or "").strip()
+    if not summary:
+        summary = _auto_summary(target_title, years, strengths_csv, wins_csv)
 
-    tmpl = {
+    skills_csv = (form.get("skills_csv") or "").strip()
+    skills = _split_csv(skills_csv)
+
+    # Optional highlights list (if you already collect it)
+    highlights_csv = (form.get("highlights_csv") or "").strip()
+    highlights = _split_csv(highlights_csv)
+
+    # If highlights not provided, build them from wins (nice fallback)
+    if not highlights:
+        highlights = _split_csv(wins_csv)
+
+    template_map = {
         "classic": "result_classic.html",
         "modern": "result_modern.html",
         "compact": "result_compact.html",
-    }[template_choice]
+    }
+    template_file = template_map.get(template_choice, "result_classic.html")
 
-    return templates.TemplateResponse(tmpl, {"request": request, "data": data})
+    return templates.TemplateResponse(
+        template_file,
+        {
+            "request": request,
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "template": template_choice.capitalize(),
+            "summary": summary,
+            "skills": skills,
+            "highlights": highlights,
+        },
+    )
 
 
-@app.post("/download/pdf")
-def download_pdf(
-    full_name: str = Form(...),
-    email: str = Form(...),
-    phone: str = Form(""),
-    summary: str = Form(...),
-    skills_line: str = Form(...),
-    wins_joined: str = Form(""),
-    template_choice: str = Form("classic"),
-):
-    # Build a clean PDF (simple + professional)
-    buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+@app.post("/download-pdf")
+async def download_pdf(request: Request):
+    form = await request.form()
 
-    left = 0.9 * inch
-    right = width - 0.9 * inch
-    y = height - 0.9 * inch
+    name = (form.get("name") or "").strip()
+    email = (form.get("email") or "").strip()
+    phone = (form.get("phone") or "").strip()
+    summary = (form.get("summary") or "").strip()
 
-    # Header
-    c.setFont("Helvetica-Bold", 20)
-    c.drawString(left, y, full_name)
-    y -= 18
+    skills = _split_csv((form.get("skills_csv") or "").strip())
+    highlights = _split_csv((form.get("highlights_csv") or "").strip())
 
-    c.setFont("Helvetica", 11)
-    contact_line = email
-    if phone.strip():
-        contact_line += f" | {phone.strip()}"
-    c.drawString(left, y, contact_line)
-    y -= 18
+    # fallback: if highlights blank, try wins_csv
+    if not highlights:
+        highlights = _split_csv((form.get("wins_csv") or "").strip())
 
-    # Accent line (slight style change by template)
-    c.setLineWidth(2)
-    if (template_choice or "").lower().strip() == "modern":
-        c.setStrokeColorRGB(0.145, 0.388, 0.922)  # blue-ish
-    else:
-        c.setStrokeColorRGB(0.07, 0.09, 0.13)     # near-black
-    c.line(left, y, right, y)
-    y -= 22
+    pdf_bytes = _make_pdf(name, email, phone, summary, skills, highlights)
 
-    def draw_section_title(title: str):
-        nonlocal y
-        c.setFont("Helvetica-Bold", 13)
-        c.setFillColorRGB(0.07, 0.09, 0.13)
-        c.drawString(left, y, title)
-        y -= 12
-
-    def draw_paragraph(text: str, font="Helvetica", size=11, leading=14):
-        nonlocal y
-        c.setFont(font, size)
-        c.setFillColorRGB(0.07, 0.09, 0.13)
-
-        # simple wrap
-        words = (text or "").split()
-        line = ""
-        for w in words:
-            test = (line + " " + w).strip()
-            if c.stringWidth(test, font, size) <= (right - left):
-                line = test
-            else:
-                c.drawString(left, y, line)
-                y -= leading
-                line = w
-                if y < 1.0 * inch:
-                    c.showPage()
-                    y = height - 0.9 * inch
-                    c.setFont(font, size)
-        if line:
-            c.drawString(left, y, line)
-            y -= leading
-
-    def ensure_space(min_space: float = 1.0 * inch):
-        nonlocal y
-        if y < min_space:
-            c.showPage()
-            y = height - 0.9 * inch
-
-    # Summary
-    ensure_space()
-    draw_section_title("Professional Summary")
-    draw_paragraph(summary, size=11, leading=14)
-    y -= 6
-
-    # Skills
-    ensure_space()
-    draw_section_title("Skills")
-    draw_paragraph(skills_line, size=11, leading=14)
-    y -= 6
-
-    # Highlights
-    wins_list = [w for w in (wins_joined or "").split("||") if w.strip()]
-    if wins_list:
-        ensure_space()
-        draw_section_title("Highlights")
-        c.setFont("Helvetica", 11)
-        bullet_indent = left + 12
-        for w in wins_list[:10]:
-            ensure_space()
-            c.drawString(left, y, "•")
-            # wrap bullet
-            text = w.strip()
-            words = text.split()
-            line = ""
-            first_line = True
-            for word in words:
-                test = (line + " " + word).strip()
-                maxw = (right - bullet_indent)
-                if c.stringWidth(test, "Helvetica", 11) <= maxw:
-                    line = test
-                else:
-                    c.drawString(bullet_indent, y, line)
-                    y -= 14
-                    line = word
-                    first_line = False
-                    if y < 1.0 * inch:
-                        c.showPage()
-                        y = height - 0.9 * inch
-                        c.setFont("Helvetica", 11)
-            if line:
-                c.drawString(bullet_indent, y, line)
-                y -= 14
-            y -= 2
-
-    c.showPage()
-    c.save()
-
-    buffer.seek(0)
-    filename = "resume_preview.pdf"
+    filename = "resume.pdf"
     return StreamingResponse(
-        buffer,
+        BytesIO(pdf_bytes),
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
     )
 
 

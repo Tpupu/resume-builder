@@ -1,134 +1,75 @@
-<!-- templates/result.html -->
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Resume Preview</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-  <main class="page">
-    <div class="toolbar no-print">
-      <a class="link" href="/">← Back</a>
+{% extends "base.html" %}
 
-      <div class="toolbar-right">
-        <a class="btn ghost" href="/download/html/{{ resume_id }}">Download HTML</a>
-        <a class="btn ghost" href="/download/docx/{{ resume_id }}">Download DOCX</a>
-        <button class="btn" type="button" onclick="window.print()">Print / Save as PDF</button>
+{% block content %}
+<div class="resume-wrap">
+  <div class="resume-card">
+
+    <div class="resume-top">
+      <h1 class="resume-name">{{ name }}</h1>
+
+      <div class="resume-meta">
+        {% if email %}
+          <span class="meta-pill">{{ email }}</span>
+        {% endif %}
+        {% if phone %}
+          <span class="meta-pill">{{ phone }}</span>
+        {% endif %}
+        {% if template %}
+          <span class="meta-pill">Template: {{ template }}</span>
+        {% endif %}
       </div>
     </div>
 
-    <section class="resume">
-      <header class="top">
-        <div>
-          <h1 class="name">{{ resume.full_name }}</h1>
-          {% if resume.headline %}
-            <div class="headline">{{ resume.headline }}</div>
-          {% endif %}
-        </div>
-
-        <div class="contact">
-          {% if resume.contact.email %}<div><b>Email:</b> {{ resume.contact.email }}</div>{% endif %}
-          {% if resume.contact.phone %}<div><b>Phone:</b> {{ resume.contact.phone }}</div>{% endif %}
-          {% if resume.contact.location %}<div><b>Location:</b> {{ resume.contact.location }}</div>{% endif %}
-        </div>
-      </header>
-
-      {% if resume.contact.links and resume.contact.links|length > 0 %}
-      <section class="section">
-        <h2>Links</h2>
-        <ul class="list">
-          {% for l in resume.contact.links %}
-            <li><a href="{{ l }}" target="_blank" rel="noopener">{{ l }}</a></li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
-
-      {% if resume.summary %}
-      <section class="section">
+    {% if summary %}
+      <div class="resume-section">
         <h2>Professional Summary</h2>
-        <p class="para">{{ resume.summary }}</p>
-      </section>
-      {% endif %}
+        <div class="resume-body">{{ summary }}</div>
+      </div>
+    {% endif %}
 
-      {% if resume.skills and resume.skills|length > 0 %}
-      <section class="section">
+    {% if skills and skills|length > 0 %}
+      <div class="resume-section">
         <h2>Skills</h2>
-        <div class="chips">
-          {% for s in resume.skills %}
-            <span class="chip">{{ s }}</span>
+        <div class="skills-badges">
+          {% for s in skills %}
+            <span class="skill-badge">{{ s }}</span>
           {% endfor %}
         </div>
-      </section>
-      {% endif %}
+      </div>
+    {% endif %}
 
-      {% if resume.experience and resume.experience|length > 0 %}
-      <section class="section">
-        <h2>Experience</h2>
-        {% for item in resume.experience %}
-          <div class="block">
-            <div class="block-title">{{ item.header }}</div>
-            {% if item.bullets and item.bullets|length > 0 %}
-              <ul class="bullets">
-                {% for b in item.bullets %}
-                  <li>{{ b }}</li>
-                {% endfor %}
-              </ul>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </section>
-      {% endif %}
-
-      {% if resume.projects and resume.projects|length > 0 %}
-      <section class="section">
-        <h2>Projects</h2>
-        {% for p in resume.projects %}
-          <div class="block">
-            <div class="block-title">{{ p.name }}</div>
-            {% if p.bullets and p.bullets|length > 0 %}
-              <ul class="bullets">
-                {% for b in p.bullets %}
-                  <li>{{ b }}</li>
-                {% endfor %}
-              </ul>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </section>
-      {% endif %}
-
-      {% if resume.education and resume.education|length > 0 %}
-      <section class="section">
-        <h2>Education</h2>
-        <ul class="list">
-          {% for e in resume.education %}
-            <li>{{ e.line }}</li>
+    {% if highlights and highlights|length > 0 %}
+      <div class="resume-section">
+        <h2>Highlights</h2>
+        <ul class="bullets">
+          {% for h in highlights %}
+            <li>{{ h }}</li>
           {% endfor %}
         </ul>
-      </section>
-      {% endif %}
+      </div>
+    {% endif %}
 
-      {% if resume.certifications and resume.certifications|length > 0 %}
-      <section class="section">
-        <h2>Certifications</h2>
-        <ul class="list">
-          {% for c in resume.certifications %}
-            <li>{{ c.line }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
+    <div class="btn-row">
+      <a class="btn" href="/">← Back</a>
 
-      <footer class="foot small">
-        Generated {{ resume.meta.generated_at }}
-      </footer>
-    </section>
-  </main>
-</body>
-</html>
+      <!-- keep your existing download endpoint name the same as your project -->
+      <!-- If your app uses POST /download-pdf -->
+      <form method="post" action="/download-pdf" style="margin:0;">
+        <input type="hidden" name="name" value="{{ name }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        <input type="hidden" name="summary" value="{{ summary }}">
+        <input type="hidden" name="skills_csv" value="{{ (skills|join(', ')) if skills else '' }}">
+        <input type="hidden" name="highlights_csv" value="{{ (highlights|join(', ')) if highlights else '' }}">
+        <input type="hidden" name="template" value="{{ template }}">
+        <button class="btn btn-primary" type="submit">Download PDF</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
 
 
 
