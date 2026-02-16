@@ -1,45 +1,50 @@
-FILE: templates/index.html
-<!doctype html>
+<!-- templates/index.html -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Resume Builder</title>
-  <link rel="stylesheet" href="/static/styles.css"/>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
+
 <body>
- <div class="container">
   <div class="page">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-      <div class="badge">Resume Builder</div>
-      <div class="badge">Templates + PDF</div>
-      <div class="badge">Guided questions</div>
-    </div>
-
-    <h1 class="h1">Resume Builder</h1>
-    <p class="sub">Fill this out and get a clean resume preview. Choose a template. Download a PDF.</p>
-
     <div class="card">
-      <form method="post" action="/build">
-        <div class="grid grid-2">
-          <div>
-            <div class="label">Full name</div>
-            <input class="input" name="full_name" placeholder="Your name" required/>
-          </div>
-          <div>
-            <div class="label">Email</div>
-            <input class="input" type="email" name="email" placeholder="you@email.com" required/>
+      <nav class="topnav">
+        <a href="/" class="pill active">Resume Builder</a>
+        <a href="#templates" class="pill">Templates + PDF</a>
+        <a href="#guided" class="pill">Guided questions</a>
+      </nav>
+
+      <header class="hero">
+        <h1>Resume Builder</h1>
+        <p class="sub">
+          Fill this out and get a clean resume preview. Choose a template. Download a PDF.
+        </p>
+      </header>
+
+      <form method="post" action="/build" class="form">
+        <div class="grid2">
+          <div class="field">
+            <label for="full_name">Full name</label>
+            <input id="full_name" name="full_name" type="text" placeholder="Your name" value="{{ default_full_name or '' }}" />
           </div>
 
-          <div>
-            <div class="label">Phone</div>
-            <input class="input" name="phone" placeholder="(555) 555-5555"/>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="you@email.com" value="{{ default_email or '' }}" />
+          </div>
+
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="text" placeholder="(555) 555-5555" value="{{ default_phone or '' }}" />
             <div class="hint">Tip: keep it simple. You can polish later.</div>
           </div>
 
-          <div>
-            <div class="label">Template</div>
-            <select class="select" name="template_choice">
+          <div class="field" id="templates">
+            <label for="template">Template</label>
+            <select id="template" name="template">
               <option value="classic" selected>Classic</option>
               <option value="modern">Modern</option>
               <option value="compact">Compact</option>
@@ -48,58 +53,58 @@ FILE: templates/index.html
           </div>
         </div>
 
-        <div class="hr"></div>
+        <div class="soft-divider" id="guided"></div>
 
-        <div class="kicker">Guided questions (helps build your summary)</div>
+        <div class="muted-title">Guided questions (helps build your summary)</div>
 
-        <div class="grid grid-2">
-          <div>
-            <div class="label">Target job title</div>
-            <input class="input" name="target_title" placeholder="Area Manager / Customer Service / IT Support"/>
+        <div class="grid2">
+          <div class="field">
+            <label for="target_title">Target job title</label>
+            <input id="target_title" name="target_title" type="text" placeholder="Area Manager / Customer Service / IT Support" value="{{ default_target_title or '' }}" />
             <div class="hint">Example: “Area Manager”, “Front Desk Agent”, “Data Analyst”.</div>
           </div>
 
-          <div>
-            <div class="label">Years of experience</div>
-            <input class="input" name="years_exp" placeholder="10+"/>
+          <div class="field">
+            <label for="years_experience">Years of experience</label>
+            <input id="years_experience" name="years_experience" type="text" placeholder="10+" value="{{ default_years_experience or '' }}" />
             <div class="hint">Example: “3”, “5”, “10+”.</div>
           </div>
 
-          <div>
-            <div class="label">Top strengths (comma-separated)</div>
-            <input class="input" name="strengths" placeholder="Leadership, Coaching, Problem solving"/>
+          <div class="field">
+            <label for="strengths">Top strengths (comma-separated)</label>
+            <input id="strengths" name="strengths" type="text" placeholder="Leadership, Coaching, Problem solving" value="{{ default_strengths or '' }}" />
             <div class="hint">These can be used to help generate your summary.</div>
           </div>
 
-          <div>
-            <div class="label">Big wins (short)</div>
-            <input class="input" name="wins" placeholder="Improved speed, trained team, hit goals"/>
+          <div class="field">
+            <label for="wins">Big wins (short)</label>
+            <input id="wins" name="wins" type="text" placeholder="Improved speed, trained team, hit goals" value="{{ default_wins or '' }}" />
             <div class="hint">Keep it short — we’ll turn it into bullets.</div>
           </div>
         </div>
 
-        <div style="margin-top:14px;">
-          <div class="label">Professional summary (optional)</div>
-          <textarea class="textarea" name="summary" placeholder="Write a short summary..."></textarea>
+        <div class="field">
+          <label for="summary">Professional summary (optional)</label>
+          <textarea id="summary" name="summary" rows="5" placeholder="Write a short summary...">{{ default_summary or '' }}</textarea>
           <div class="hint">If you leave this blank, the app will generate a basic summary from your guided answers.</div>
         </div>
 
-        <div style="margin-top:14px;">
-          <div class="label">Skills (comma-separated)</div>
-          <textarea class="textarea" name="skills" placeholder="Leadership, Process Improvement, ..."></textarea>
+        <div class="field">
+          <label for="skills">Skills (comma-separated)</label>
+          <textarea id="skills" name="skills" rows="3" placeholder="Leadership, Process Improvement, ...">{{ default_skills or '' }}</textarea>
           <div class="hint">If blank, we’ll use strengths + common skills based on your target title.</div>
         </div>
 
         <div class="actions">
-          <button class="btn" type="submit">Build resume</button>
-          <button class="btn secondary" type="reset">Clear</button>
+          <button class="btn primary" type="submit">Build resume</button>
+          <button class="btn" type="reset">Clear</button>
         </div>
       </form>
     </div>
   </div>
- </div>
 </body>
 </html>
+
 
 
 
