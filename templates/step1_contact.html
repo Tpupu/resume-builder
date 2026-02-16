@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>Resume Builder</h1>
+    <div class="sub">Step 1 of 5 — basic contact info.</div>
+  </div>
+  <a class="btn ghost" href="/reset">Reset</a>
+</div>
+
+<div class="progress">
+  <div class="pill on">1 Contact</div>
+  <div class="pill">2 Summary</div>
+  <div class="pill">3 Skills + Certs</div>
+  <div class="pill">4 Experience</div>
+  <div class="pill">5 Review</div>
+</div>
+
+<div class="card">
+  <form method="post" action="/step/1">
+    <div class="row">
+      <div>
+        <label>Full name</label>
+        <input name="full_name" placeholder="Your name" value="{{ resume.full_name }}" required />
+      </div>
+      <div>
+        <label>Email</label>
+        <input name="email" placeholder="you@email.com" value="{{ resume.email }}" required />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Phone</label>
+        <input name="phone" placeholder="(555) 555-5555" value="{{ resume.phone }}" />
+        <div class="hint">Tip: keep it simple. You can polish later.</div>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="btns">
+      <button class="btn primary" type="submit">Continue</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

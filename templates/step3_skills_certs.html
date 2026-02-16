@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>Resume Builder</h1>
+    <div class="sub">Step 3 of 5 — skills + certifications.</div>
+  </div>
+  <a class="btn ghost" href="/step/2">Back</a>
+</div>
+
+<div class="progress">
+  <div class="pill">1 Contact</div>
+  <div class="pill">2 Summary</div>
+  <div class="pill on">3 Skills + Certs</div>
+  <div class="pill">4 Experience</div>
+  <div class="pill">5 Review</div>
+</div>
+
+<div class="card">
+  <form method="post" action="/step/3">
+    <label>Skills (comma-separated)</label>
+    <textarea name="skills" placeholder="Leadership, Process Improvement, ...">{{ resume.skills }}</textarea>
+    <div class="hint">Example: Leadership, Operations, Excel, SQL, Customer Service</div>
+
+    <div class="divider"></div>
+
+    <label>Certifications (one per line)</label>
+    <textarea name="certs" placeholder="Forklift Certification&#10;CPR&#10;CompTIA A+">{{ resume.certs }}</textarea>
+    <div class="hint">Optional. One cert per line.</div>
+
+    <div class="btns">
+      <a class="btn ghost" href="/step/2">Back</a>
+      <button class="btn primary" type="submit">Continue</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

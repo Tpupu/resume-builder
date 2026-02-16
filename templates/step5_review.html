@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>Resume Builder</h1>
+    <div class="sub">Step 5 of 5 — review everything, then finalize.</div>
+  </div>
+  <a class="btn ghost" href="/step/4">Back</a>
+</div>
+
+<div class="progress">
+  <div class="pill">1 Contact</div>
+  <div class="pill">2 Summary</div>
+  <div class="pill">3 Skills + Certs</div>
+  <div class="pill">4 Experience</div>
+  <div class="pill on">5 Review</div>
+</div>
+
+<div class="card">
+  <div class="preview">
+    <div class="name">{{ view.full_name if view.full_name else "Your Name" }}</div>
+    <div class="contact">
+      {{ view.email if view.email else "you@email.com" }}
+      {% if view.phone %} | {{ view.phone }}{% endif %}
+    </div>
+
+    {% if view.summary %}
+      <div class="section-title">Professional Summary</div>
+      <div>{{ view.summary }}</div>
+    {% endif %}
+
+    {% if view.skills_list and view.skills_list|length > 0 %}
+      <div class="section-title">Skills</div>
+      <div class="chips">
+        {% for s in view.skills_list %}
+          <div class="chip">{{ s }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if view.certs_list and view.certs_list|length > 0 %}
+      <div class="section-title">Certifications</div>
+      <ul>
+        {% for c in view.certs_list %}
+          <li>{{ c }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if view.jobs and view.jobs|length > 0 %}
+      <div class="section-title">Experience</div>
+      {% for j in view.jobs %}
+        <div class="job">
+          <div class="job-head">
+            <div>
+              <div class="job-title">{{ j.title }}{% if j.company %} — {{ j.company }}{% endif %}</div>
+              <div class="job-meta">{% if j.location %}{{ j.location }}{% endif %}</div>
+            </div>
+            <div class="job-meta">{{ j.dates }}</div>
+          </div>
+
+          {% if j.bullets and j.bullets|length > 0 %}
+            <ul>
+              {% for b in j.bullets %}
+                <li>{{ b }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="small" style="margin-top:16px;">Next: we add PDF export + more sections (education, projects, links).</div>
+  </div>
+
+  <div class="btns">
+    <a class="btn ghost" href="/step/4">Back</a>
+    <form method="post" action="/finalize" style="margin:0;">
+      <button class="btn primary" type="submit">Finalize & Preview</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>Resume Builder</h1>
+    <div class="sub">Step 4 of 5 — experience (add up to 2 jobs for MVP).</div>
+  </div>
+  <a class="btn ghost" href="/step/3">Back</a>
+</div>
+
+<div class="progress">
+  <div class="pill">1 Contact</div>
+  <div class="pill">2 Summary</div>
+  <div class="pill">3 Skills + Certs</div>
+  <div class="pill on">4 Experience</div>
+  <div class="pill">5 Review</div>
+</div>
+
+<div class="card">
+  <form method="post" action="/step/4">
+
+    <div class="section-title">Job 1</div>
+    <div class="row">
+      <div>
+        <label>Company</label>
+        <input name="job1_company" placeholder="Amazon" value="{{ resume.job1_company }}" />
+      </div>
+      <div>
+        <label>Job title</label>
+        <input name="job1_title" placeholder="Area Manager" value="{{ resume.job1_title }}" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Location</label>
+        <input name="job1_location" placeholder="City, State" value="{{ resume.job1_location }}" />
+      </div>
+      <div>
+        <label>Dates</label>
+        <input name="job1_dates" placeholder="2023 – 2025" value="{{ resume.job1_dates }}" />
+      </div>
+    </div>
+
+    <label>Bullets (one per line)</label>
+    <textarea name="job1_bullets" placeholder="Led a team of 50+ associates...&#10;Improved TPH by 10%...">{{ resume.job1_bullets }}</textarea>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Job 2 (optional)</div>
+    <div class="row">
+      <div>
+        <label>Company</label>
+        <input name="job2_company" placeholder="Company name" value="{{ resume.job2_company }}" />
+      </div>
+      <div>
+        <label>Job title</label>
+        <input name="job2_title" placeholder="Job title" value="{{ resume.job2_title }}" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Location</label>
+        <input name="job2_location" placeholder="City, State" value="{{ resume.job2_location }}" />
+      </div>
+      <div>
+        <label>Dates</label>
+        <input name="job2_dates" placeholder="2021 – 2023" value="{{ resume.job2_dates }}" />
+      </div>
+    </div>
+
+    <label>Bullets (one per line)</label>
+    <textarea name="job2_bullets" placeholder="Supported daily ops...&#10;Trained new hires...">{{ resume.job2_bullets }}</textarea>
+
+    <div class="btns">
+      <a class="btn ghost" href="/step/3">Back</a>
+      <button class="btn primary" type="submit">Continue</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

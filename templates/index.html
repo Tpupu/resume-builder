@@ -1,0 +1,103 @@
+FILE: templates/index.html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Resume Builder</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <div class="page">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <div class="badge">Resume Builder</div>
+      <div class="badge">Templates + PDF</div>
+      <div class="badge">Guided questions</div>
+    </div>
+
+    <h1 class="h1">Resume Builder</h1>
+    <p class="sub">Fill this out and get a clean resume preview. Choose a template. Download a PDF.</p>
+
+    <div class="card">
+      <form method="post" action="/build">
+        <div class="grid grid-2">
+          <div>
+            <div class="label">Full name</div>
+            <input class="input" name="full_name" placeholder="Your name" required/>
+          </div>
+          <div>
+            <div class="label">Email</div>
+            <input class="input" type="email" name="email" placeholder="you@email.com" required/>
+          </div>
+
+          <div>
+            <div class="label">Phone</div>
+            <input class="input" name="phone" placeholder="(555) 555-5555"/>
+            <div class="hint">Tip: keep it simple. You can polish later.</div>
+          </div>
+
+          <div>
+            <div class="label">Template</div>
+            <select class="select" name="template_choice">
+              <option value="classic" selected>Classic</option>
+              <option value="modern">Modern</option>
+              <option value="compact">Compact</option>
+            </select>
+            <div class="hint">This changes the look of the preview.</div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="kicker">Guided questions (helps build your summary)</div>
+
+        <div class="grid grid-2">
+          <div>
+            <div class="label">Target job title</div>
+            <input class="input" name="target_title" placeholder="Area Manager / Customer Service / IT Support"/>
+            <div class="hint">Example: “Area Manager”, “Front Desk Agent”, “Data Analyst”.</div>
+          </div>
+
+          <div>
+            <div class="label">Years of experience</div>
+            <input class="input" name="years_exp" placeholder="10+"/>
+            <div class="hint">Example: “3”, “5”, “10+”.</div>
+          </div>
+
+          <div>
+            <div class="label">Top strengths (comma-separated)</div>
+            <input class="input" name="strengths" placeholder="Leadership, Coaching, Problem solving"/>
+            <div class="hint">These can be used to help generate your summary.</div>
+          </div>
+
+          <div>
+            <div class="label">Big wins (short)</div>
+            <input class="input" name="wins" placeholder="Improved speed, trained team, hit goals"/>
+            <div class="hint">Keep it short — we’ll turn it into bullets.</div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="label">Professional summary (optional)</div>
+          <textarea class="textarea" name="summary" placeholder="Write a short summary..."></textarea>
+          <div class="hint">If you leave this blank, the app will generate a basic summary from your guided answers.</div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="label">Skills (comma-separated)</div>
+          <textarea class="textarea" name="skills" placeholder="Leadership, Process Improvement, ..."></textarea>
+          <div class="hint">If blank, we’ll use strengths + common skills based on your target title.</div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="submit">Build resume</button>
+          <button class="btn secondary" type="reset">Clear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+
+
+

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>Resume Builder</h1>
+    <div class="sub">Step 2 of 5 — professional summary.</div>
+  </div>
+  <a class="btn ghost" href="/step/1">Back</a>
+</div>
+
+<div class="progress">
+  <div class="pill">1 Contact</div>
+  <div class="pill on">2 Summary</div>
+  <div class="pill">3 Skills + Certs</div>
+  <div class="pill">4 Experience</div>
+  <div class="pill">5 Review</div>
+</div>
+
+<div class="card">
+  <form method="post" action="/step/2">
+    <label>Professional summary</label>
+    <textarea name="summary" placeholder="Write a short summary...">{{ resume.summary }}</textarea>
+    <div class="hint">Keep it 3–6 lines. Say what you do + what you’re good at.</div>
+
+    <div class="btns">
+      <a class="btn ghost" href="/step/1">Back</a>
+      <button class="btn primary" type="submit">Continue</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

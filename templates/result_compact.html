@@ -1,0 +1,55 @@
+FILE: templates/result_compact.html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Resume Preview</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <div class="preview-wrap t-compact">
+    <div class="preview">
+      <div class="top">
+        <div>
+          <p class="name">{{ data.full_name }}</p>
+          <div class="contact">{{ data.email }}{% if data.phone %} | {{ data.phone }}{% endif %}</div>
+        </div>
+        <div class="badge">Template: Compact</div>
+      </div>
+      <div class="line"></div>
+
+      <h2>Professional Summary</h2>
+      <p>{{ data.summary }}</p>
+
+      <h2>Skills</h2>
+      <div class="skills-box">{{ data.skills_line }}</div>
+
+      {% if data.wins_list and data.wins_list|length > 0 %}
+      <h2>Highlights</h2>
+      <ul class="bullets">
+        {% for w in data.wins_list %}
+          <li>{{ w }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <div class="hr"></div>
+
+      <form method="post" action="/download/pdf">
+        <input type="hidden" name="full_name" value="{{ data.full_name }}">
+        <input type="hidden" name="email" value="{{ data.email }}">
+        <input type="hidden" name="phone" value="{{ data.phone }}">
+        <input type="hidden" name="summary" value="{{ data.summary }}">
+        <input type="hidden" name="skills_line" value="{{ data.skills_line }}">
+        <input type="hidden" name="wins_joined" value="{{ data.wins_joined }}">
+        <input type="hidden" name="template_choice" value="{{ data.template_choice }}">
+        <div class="actions">
+          <a class="btn secondary" href="/">← Back</a>
+          <button class="btn" type="submit">Download PDF</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
