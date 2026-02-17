@@ -108,7 +108,6 @@
     </div>
 
     <div id="jobsWrap" style="margin-top:12px;"></div>
-
     <input id="jobsJson" type="hidden" name="jobs_json" value="[]"/>
 
     <div class="divider"></div>
@@ -129,13 +128,13 @@
       Add “References available upon request”
     </label>
 
-    <!-- Optional: if you want to control auto-apply behavior -->
+    <!-- Auto-apply toggle (OFF by default) -->
     <label style="display:flex; align-items:center; gap:10px; margin-top:12px;">
-      <input id="autoApply" type="checkbox" checked style="width:auto; transform:translateY(1px);" />
+      <input id="autoApply" type="checkbox" style="width:auto; transform:translateY(1px);" />
       Auto-apply summary polish while typing
     </label>
 
-    <!-- Optional suggestion boxes (JS will use them if present) -->
+    <!-- Suggestion boxes (JS will use them if present) -->
     <div id="sugSummaryBox" class="card" style="margin-top:14px; display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
         <div style="font-weight:800;">Suggested summary</div>
@@ -168,26 +167,21 @@
   </form>
 </div>
 
+<!-- Optional: keep this if you want the button to "force" a polish call instantly.
+     It won't break anything even if app.js already handles it. -->
 <script>
-  // Make your "Polish my wording" button actually trigger the same flow
   document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("polishBtn");
     if (!btn) return;
 
-    btn.addEventListener("click", async () => {
-      // Just nudge inputs to trigger the JS listener if it exists
+    btn.addEventListener("click", () => {
       const ev = new Event("input", { bubbles: true });
-      const fields = ["summary","wins","skills","strengths","target_title","years_experience"]
+      ["summary","wins","skills","strengths","target_title","years_experience"]
         .map(id => document.getElementById(id))
-        .filter(Boolean);
-
-      fields.forEach(f => f.dispatchEvent(ev));
+        .filter(Boolean)
+        .forEach(el => el.dispatchEvent(ev));
     });
   });
 </script>
 
 {% endblock %}
-
-
-
-

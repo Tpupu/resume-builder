@@ -76,11 +76,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sugHint = document.getElementById("sugHint");
 
-  // OPTIONAL: checkbox to control auto-apply behavior
-  const autoApplyEl = document.getElementById("autoApply");
+  // ==========================================
+  // Auto-apply toggle (default OFF, remember choice)
+  // Supports id="autoApplyToggle" or id="autoApply"
+  // ==========================================
+  const autoApplyEl =
+    document.getElementById("autoApplyToggle") || document.getElementById("autoApply");
+
+  const AUTO_KEY = "rb_auto_apply_summary"; // localStorage key
+
+  if (autoApplyEl) {
+    // If nothing saved yet => default OFF
+    const saved = localStorage.getItem(AUTO_KEY);
+    autoApplyEl.checked = saved === "1";
+
+    autoApplyEl.addEventListener("change", () => {
+      localStorage.setItem(AUTO_KEY, autoApplyEl.checked ? "1" : "0");
+    });
+  }
+
   function autoApplyOn() {
-    // If checkbox exists, obey it. If not, default ON (summary only).
-    if (!autoApplyEl) return true;
+    // If checkbox exists, obey it. If missing, OFF.
+    if (!autoApplyEl) return false;
     return !!autoApplyEl.checked;
   }
 
@@ -238,23 +255,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function scheduleAutoApplySummary(text) {
-    // Only summary auto-applies (safe). Wins/skills stay as suggestions unless you click Apply.
     if (!summaryEl) return;
     if (!autoApplyOn()) return;
 
     clearTimeout(autoApplyTimer);
     autoApplyTimer = setTimeout(() => {
-      // don't overwrite if user is empty and suggestion is empty
       if ((text || "").trim().length === 0) return;
-
-      // If user is actively typing, this delay prevents constant overwrites.
       summaryEl.value = text;
     }, 900);
   }
 
   async function requestPolish() {
-    // If none of these exist, there is nowhere to show polish,
-    // but we STILL want auto-apply summary if you have summary field.
     if (!summaryEl && !winsEl && !skillsEl && !jobsWrap) return;
 
     const payload = collectPayload();
@@ -273,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const skillsSuggestedList = Array.isArray(data.skills_suggested) ? data.skills_suggested : [];
       const skillsSuggested = skillsSuggestedList.join(", ");
 
-      // Show suggestion boxes
       if (sugSummaryText) {
         sugSummaryText.textContent = summarySuggested;
         showBox(sugSummaryBox, summarySuggested.length > 0);
@@ -294,12 +304,10 @@ document.addEventListener("DOMContentLoaded", () => {
         sugHint.textContent = hints.length ? hints[0] : "";
       }
 
-      // AUTO-APPLY summary (this is the "it used to AI my input" feeling)
       if (summarySuggested && summaryEl) {
         scheduleAutoApplySummary(summarySuggested);
       }
 
-      // Per-job suggestions (optional)
       if (jobsWrap) {
         const cards = jobsWrap.querySelectorAll(".job-card");
         const all = Array.isArray(data.jobs_suggestions) ? data.jobs_suggestions : [];
@@ -310,7 +318,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const textarea = card.querySelector('[data-field="bullets"]');
 
           const suggestions = Array.isArray(all[idx]) ? all[idx] : [];
-
           if (!sugBox || !ul || !applyBtn || !textarea) return;
 
           setList(ul, suggestions);
@@ -324,7 +331,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
 
-      // Apply buttons (manual)
       if (sugSummaryApply && summaryEl) {
         sugSummaryApply.onclick = () => {
           summaryEl.value = summarySuggested;
@@ -355,7 +361,6 @@ document.addEventListener("DOMContentLoaded", () => {
     polishTimer = setTimeout(requestPolish, 420);
   }
 
-  // Bind inputs (IF IDs match)
   const listen = (el) => {
     if (!el) return;
     el.addEventListener("input", requestPolishDebounced);
@@ -367,7 +372,6 @@ document.addEventListener("DOMContentLoaded", () => {
   listen(targetTitleEl);
   listen(yearsEl);
 
-  // initial
   requestPolish();
 
   // ==========================================
@@ -444,6 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   syncPreviewSettingsIntoForms();
 });
+
 
 
 
