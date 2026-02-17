@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ==========================================
-  // Builder + fields
+  // Resume Builder (existing)
   // ==========================================
   const builderForm = document.getElementById("resumeForm");
   const jobsWrap = document.getElementById("jobsWrap");
@@ -53,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const jobsJsonField =
     document.getElementById("jobs_json") || document.getElementById("jobsJson");
 
-  // fields we "mini-ai" polish (MUST MATCH your HTML IDs)
   const summaryEl = document.getElementById("summary");
   const winsEl = document.getElementById("wins");
   const skillsEl = document.getElementById("skills");
@@ -61,7 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const targetTitleEl = document.getElementById("target_title");
   const yearsEl = document.getElementById("years_experience");
 
-  // suggestion UI
   const sugSummaryBox = document.getElementById("sugSummaryBox");
   const sugSummaryText = document.getElementById("sugSummaryText");
   const sugSummaryApply = document.getElementById("sugSummaryApply");
@@ -76,27 +74,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sugHint = document.getElementById("sugHint");
 
-  // ==========================================
-  // Auto-apply toggle (default OFF, remember choice)
-  // Supports id="autoApplyToggle" or id="autoApply"
-  // ==========================================
+  // IMPORTANT: match your index.html checkbox id
   const autoApplyEl =
     document.getElementById("autoApplyToggle") || document.getElementById("autoApply");
 
-  const AUTO_KEY = "rb_auto_apply_summary"; // localStorage key
-
-  if (autoApplyEl) {
-    // If nothing saved yet => default OFF
-    const saved = localStorage.getItem(AUTO_KEY);
-    autoApplyEl.checked = saved === "1";
-
-    autoApplyEl.addEventListener("change", () => {
-      localStorage.setItem(AUTO_KEY, autoApplyEl.checked ? "1" : "0");
-    });
-  }
-
   function autoApplyOn() {
-    // If checkbox exists, obey it. If missing, OFF.
+    // If checkbox exists, obey it.
+    // If it does NOT exist, default OFF (so nothing surprises users).
     if (!autoApplyEl) return false;
     return !!autoApplyEl.checked;
   }
@@ -186,14 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <label>Bullets</label>
       <textarea data-field="bullets" placeholder="One bullet per line. Keep it simple.">${(prefill.bullets || []).join("\n")}</textarea>
 
-      <div class="sugbox" data-sug="job">
-        <div class="sughead">
-          <div class="sugtitle">Suggested bullets</div>
-          <button type="button" class="btn primary sugapply">Apply</button>
-        </div>
-        <ul class="suglist"></ul>
-      </div>
-
       <div class="divider"></div>
     `;
 
@@ -201,13 +177,13 @@ document.addEventListener("DOMContentLoaded", () => {
     removeBtn.addEventListener("click", () => {
       card.remove();
       syncJobsJson();
-      requestPolish();
+      requestResumePolish();
     });
 
     card.querySelectorAll("input, textarea").forEach((el) => {
       el.addEventListener("input", () => {
         syncJobsJson();
-        requestPolishDebounced();
+        requestResumePolishDebounced();
       });
     });
 
@@ -219,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (jobsWrap.querySelectorAll(".job-card").length >= 3) return;
       jobsWrap.appendChild(makeJobCard({}));
       syncJobsJson();
-      requestPolish();
+      requestResumePolish();
     });
 
     if (jobsWrap.querySelectorAll(".job-card").length === 0) {
@@ -235,14 +211,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ==========================================
-  // Mini-AI: live suggestions + AUTO APPLY
-  // Endpoint returns: polished_summary, bullets, skills_suggested
-  // ==========================================
-  let polishTimer = null;
-  let autoApplyTimer = null;
+  // ---- Resume polish ----
+  let resumePolishTimer = null;
+  let resumeAutoApplyTimer = null;
 
-  function collectPayload() {
+  function collectResumePayload() {
     return {
       target_title: targetTitleEl?.value || "",
       years_experience: yearsEl?.value || "",
@@ -258,17 +231,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!summaryEl) return;
     if (!autoApplyOn()) return;
 
-    clearTimeout(autoApplyTimer);
-    autoApplyTimer = setTimeout(() => {
+    clearTimeout(resumeAutoApplyTimer);
+    resumeAutoApplyTimer = setTimeout(() => {
       if ((text || "").trim().length === 0) return;
       summaryEl.value = text;
-    }, 900);
+    }, 700);
   }
 
-  async function requestPolish() {
+  async function requestResumePolish() {
+    // if no resume fields exist, skip
     if (!summaryEl && !winsEl && !skillsEl && !jobsWrap) return;
 
-    const payload = collectPayload();
+    const payload = collectResumePayload();
 
     try {
       const res = await fetch("/polish", {
@@ -308,47 +282,24 @@ document.addEventListener("DOMContentLoaded", () => {
         scheduleAutoApplySummary(summarySuggested);
       }
 
-      if (jobsWrap) {
-        const cards = jobsWrap.querySelectorAll(".job-card");
-        const all = Array.isArray(data.jobs_suggestions) ? data.jobs_suggestions : [];
-        cards.forEach((card, idx) => {
-          const sugBox = card.querySelector('[data-sug="job"]');
-          const ul = card.querySelector(".suglist");
-          const applyBtn = card.querySelector(".sugapply");
-          const textarea = card.querySelector('[data-field="bullets"]');
-
-          const suggestions = Array.isArray(all[idx]) ? all[idx] : [];
-          if (!sugBox || !ul || !applyBtn || !textarea) return;
-
-          setList(ul, suggestions);
-          showBox(sugBox, suggestions.length > 0);
-
-          applyBtn.onclick = () => {
-            textarea.value = suggestions.join("\n");
-            syncJobsJson();
-            requestPolish();
-          };
-        });
-      }
-
       if (sugSummaryApply && summaryEl) {
         sugSummaryApply.onclick = () => {
           summaryEl.value = summarySuggested;
-          requestPolish();
+          requestResumePolish();
         };
       }
 
       if (sugWinsApply && winsEl) {
         sugWinsApply.onclick = () => {
           winsEl.value = bullets.join("\n");
-          requestPolish();
+          requestResumePolish();
         };
       }
 
       if (sugSkillsApply && skillsEl) {
         sugSkillsApply.onclick = () => {
           skillsEl.value = skillsSuggested;
-          requestPolish();
+          requestResumePolish();
         };
       }
     } catch (e) {
@@ -356,26 +307,156 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function requestPolishDebounced() {
-    clearTimeout(polishTimer);
-    polishTimer = setTimeout(requestPolish, 420);
+  function requestResumePolishDebounced() {
+    clearTimeout(resumePolishTimer);
+    resumePolishTimer = setTimeout(requestResumePolish, 380);
   }
 
-  const listen = (el) => {
+  // bind resume inputs
+  const listen = (el, fn) => {
     if (!el) return;
-    el.addEventListener("input", requestPolishDebounced);
+    el.addEventListener("input", fn);
   };
-  listen(summaryEl);
-  listen(winsEl);
-  listen(skillsEl);
-  listen(strengthsEl);
-  listen(targetTitleEl);
-  listen(yearsEl);
+  listen(summaryEl, requestResumePolishDebounced);
+  listen(winsEl, requestResumePolishDebounced);
+  listen(skillsEl, requestResumePolishDebounced);
+  listen(strengthsEl, requestResumePolishDebounced);
+  listen(targetTitleEl, requestResumePolishDebounced);
+  listen(yearsEl, requestResumePolishDebounced);
 
-  requestPolish();
+  // initial resume polish (only if on resume page)
+  requestResumePolish();
 
   // ==========================================
-  // Preview: live swap + hidden sync
+  // Cover Letter page: polish + auto-apply
+  // ==========================================
+  const coverForm = document.getElementById("coverForm");
+  const clPolishBtn = document.getElementById("clPolishBtn");
+
+  const clFull = document.getElementById("cl_full_name");
+  const clEmail = document.getElementById("cl_email");
+  const clPhone = document.getElementById("cl_phone");
+
+  const clCompany = document.getElementById("cl_company");
+  const clManager = document.getElementById("cl_manager");
+  const clRole = document.getElementById("cl_role");
+  const clSource = document.getElementById("cl_source");
+
+  const clStrengths = document.getElementById("cl_strengths");
+  const clAch = document.getElementById("cl_achievements");
+  const clWhy = document.getElementById("cl_why");
+  const clClose = document.getElementById("cl_close");
+
+  const clTone = document.getElementById("cl_tone");
+  const clLetter = document.getElementById("cl_letter");
+
+  const clAutoApply = document.getElementById("clAutoApplyToggle");
+  function clAutoOn() {
+    if (!clAutoApply) return false; // OFF by default
+    return !!clAutoApply.checked;
+  }
+
+  const clSugBox = document.getElementById("clSugBox");
+  const clSugText = document.getElementById("clSugText");
+  const clSugApply = document.getElementById("clSugApply");
+
+  let clPolishTimer = null;
+  let clAutoTimer = null;
+
+  function collectCoverPayload() {
+    return {
+      tone: clTone?.value || "confident",
+      full_name: clFull?.value || "",
+      email: clEmail?.value || "",
+      phone: clPhone?.value || "",
+      company_name: clCompany?.value || "",
+      hiring_manager: clManager?.value || "",
+      target_role: clRole?.value || "",
+      job_source: clSource?.value || "",
+      strengths: clStrengths?.value || "",
+      achievements: clAch?.value || "",
+      why_company: clWhy?.value || "",
+      closing_note: clClose?.value || "",
+      cover_letter: clLetter?.value || "",
+    };
+  }
+
+  function scheduleClAutoApply(text) {
+    if (!clLetter) return;
+    if (!clAutoOn()) return;
+
+    clearTimeout(clAutoTimer);
+    clAutoTimer = setTimeout(() => {
+      if ((text || "").trim().length === 0) return;
+      clLetter.value = text;
+    }, 650);
+  }
+
+  async function requestCoverPolish() {
+    if (!clLetter && !clCompany && !clRole) return;
+
+    const payload = collectCoverPayload();
+
+    try {
+      const res = await fetch("/polish_cover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const suggested = (data.cover_letter_suggested || "").trim();
+
+      if (clSugText) {
+        clSugText.textContent = suggested;
+        showBox(clSugBox, suggested.length > 0);
+      }
+
+      if (suggested && clLetter) {
+        scheduleClAutoApply(suggested);
+      }
+
+      if (clSugApply && clLetter) {
+        clSugApply.onclick = () => {
+          clLetter.value = suggested;
+          requestCoverPolish();
+        };
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function requestCoverPolishDebounced() {
+    clearTimeout(clPolishTimer);
+    clPolishTimer = setTimeout(requestCoverPolish, 360);
+  }
+
+  // bind cover inputs (only if on cover page)
+  if (coverForm) {
+    [
+      clFull, clEmail, clPhone,
+      clCompany, clManager, clRole, clSource,
+      clStrengths, clAch, clWhy, clClose,
+      clTone, clLetter
+    ].forEach((el) => {
+      if (!el) return;
+      el.addEventListener("input", requestCoverPolishDebounced);
+      if (el === clTone) el.addEventListener("change", requestCoverPolishDebounced);
+    });
+
+    if (clPolishBtn) {
+      clPolishBtn.addEventListener("click", () => requestCoverPolish());
+    }
+
+    // initial on cover page
+    requestCoverPolish();
+  }
+
+  // ==========================================
+  // Preview swap (resume) - keep your existing logic if you already use it
+  // (This block is safe even if the elements do not exist on a page.)
   // ==========================================
   const templateSelect = document.getElementById("templateSwap");
   const fontSelect = document.getElementById("fontSwap");
@@ -428,15 +509,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (templateSelect && resultWrap && payloadForm) {
-    templateSelect.addEventListener("change", doSwap);
-  }
-  if (fontSelect && resultWrap && payloadForm) {
-    fontSelect.addEventListener("change", doSwap);
-  }
-  if (pageLimitSelect) {
-    pageLimitSelect.addEventListener("change", syncPreviewSettingsIntoForms);
-  }
+  if (templateSelect && resultWrap && payloadForm) templateSelect.addEventListener("change", doSwap);
+  if (fontSelect && resultWrap && payloadForm) fontSelect.addEventListener("change", doSwap);
+  if (pageLimitSelect) pageLimitSelect.addEventListener("change", syncPreviewSettingsIntoForms);
 
   if (downloadForm) {
     downloadForm.addEventListener("submit", () => {
@@ -448,6 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   syncPreviewSettingsIntoForms();
 });
+
 
 
 

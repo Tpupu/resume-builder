@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="top">
+  <div>
+    <h1>Cover Letter Preview</h1>
+    <div class="sub">Edit inputs, switch tone, then export PDF when it looks right.</div>
+  </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <a class="btn ghost" href="/cover">← Back</a>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:14px;">
+    <div style="font-weight:800;">{{ data.full_name or "Your Name" }}</div>
+    <div class="hint">{{ data.target_role }}{% if data.company_name %} • {{ data.company_name }}{% endif %}</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card" style="margin-top:0;">
+    <pre style="white-space:pre-wrap; margin:0; color:var(--text); font-size:15px; line-height:1.6;">{{ letter_text }}</pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PDF download -->
+  <form id="coverDownloadForm" method="post" action="/cover/download_pdf">
+    <input type="hidden" name="full_name" value="{{ data.full_name }}">
+    <input type="hidden" name="email" value="{{ data.email }}">
+    <input type="hidden" name="phone" value="{{ data.phone }}">
+    <input type="hidden" name="company_name" value="{{ data.company_name }}">
+    <input type="hidden" name="hiring_manager" value="{{ data.hiring_manager }}">
+    <input type="hidden" name="target_role" value="{{ data.target_role }}">
+    <input type="hidden" name="job_source" value="{{ data.job_source }}">
+    <input type="hidden" name="strengths" value="{{ data.strengths }}">
+    <input type="hidden" name="achievements" value="{{ data.achievements }}">
+    <input type="hidden" name="why_company" value="{{ data.why_company }}">
+    <input type="hidden" name="closing_note" value="{{ data.closing_note }}">
+    <input type="hidden" name="tone" value="{{ data.tone }}">
+    <input type="hidden" name="font_family" value="{{ data.font_family }}">
+    <input type="hidden" name="page_limit" value="{{ data.page_limit }}">
+    <input type="hidden" name="cover_letter" value="{{ letter_text|e }}">
+    <button class="btn primary" type="submit">Download PDF</button>
+  </form>
+</div>
+
+{% endblock %}

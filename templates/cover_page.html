@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="top">
+  <div>
+    <h1>Cover Letter</h1>
+    <div class="sub">Fast build. Clean tone. Export PDF. Same vibe as the resume.</div>
+  </div>
+</div>
+
+<div class="card">
+  <form id="coverForm" method="post" action="/cover/build">
+
+    <div class="row">
+      <div>
+        <label>Full name</label>
+        <input id="cl_full_name" name="full_name" placeholder="Your name" />
+      </div>
+      <div>
+        <label>Email</label>
+        <input id="cl_email" name="email" placeholder="you@email.com" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Phone</label>
+        <input id="cl_phone" name="phone" placeholder="(555) 555-5555" />
+      </div>
+      <div>
+        <label>Tone</label>
+        <select id="cl_tone" name="tone">
+          <option value="confident" selected>Confident</option>
+          <option value="warm">Warm</option>
+          <option value="direct">Direct</option>
+          <option value="executive">Executive</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row3">
+      <div>
+        <label>Font</label>
+        <select id="cl_font_family" name="font_family">
+          <option value="sans" selected>Sans (clean)</option>
+          <option value="serif">Serif (formal)</option>
+          <option value="mono">Mono (tech)</option>
+        </select>
+      </div>
+      <div>
+        <label>Target pages (PDF)</label>
+        <select id="cl_page_limit" name="page_limit">
+          <option value="1" selected>1 page</option>
+          <option value="2">2 pages</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:end; gap:12px;">
+        <button id="clPolishBtn" type="button" class="btn ghost" style="width:100%;">Polish my wording</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="row">
+      <div>
+        <label>Company</label>
+        <input id="cl_company" name="company_name" placeholder="Amazon / Hilton / etc." />
+      </div>
+      <div>
+        <label>Hiring manager (optional)</label>
+        <input id="cl_manager" name="hiring_manager" placeholder="Mr. Smith / Hiring Manager" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Target role</label>
+        <input id="cl_role" name="target_role" placeholder="Area Manager / Front Desk Agent / IT Support" />
+      </div>
+      <div>
+        <label>Job source (optional)</label>
+        <input id="cl_source" name="job_source" placeholder="Indeed / referral / company site" />
+      </div>
+    </div>
+
+    <div>
+      <label>Top strengths (comma-separated)</label>
+      <input id="cl_strengths" name="strengths" placeholder="Leadership, Coaching, Communication" />
+    </div>
+
+    <div>
+      <label>Achievements (short, add numbers if you can)</label>
+      <textarea id="cl_achievements" name="achievements" placeholder="Led a team of 40+, improved safety, hit goals..."></textarea>
+    </div>
+
+    <div>
+      <label>Why this company (1–2 sentences)</label>
+      <textarea id="cl_why" name="why_company" placeholder="I’m interested because..."></textarea>
+    </div>
+
+    <div>
+      <label>Closing note (optional)</label>
+      <textarea id="cl_close" name="closing_note" placeholder="I’d love to talk and learn what success looks like in the first 90 days."></textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <label>Cover letter (auto-generated if you leave this blank)</label>
+      <textarea id="cl_letter" name="cover_letter" placeholder="Leave blank to auto-generate from your answers..."></textarea>
+      <div class="hint">Tip: use the suggestions box to apply a clean version fast.</div>
+    </div>
+
+    <!-- Auto-apply toggle (OFF by default) -->
+    <label style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+      <input id="clAutoApplyToggle" type="checkbox" style="width:auto; transform:translateY(1px);" />
+      Auto-apply cover letter while typing
+    </label>
+
+    <div id="clSugBox" class="card" style="margin-top:14px; display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <div style="font-weight:800;">Suggested cover letter</div>
+        <button id="clSugApply" type="button" class="btn primary">Apply</button>
+      </div>
+      <pre id="clSugText" class="hint" style="margin-top:10px; white-space:pre-wrap; font-size:14px; color:var(--text);"></pre>
+    </div>
+
+    <div class="btns">
+      <button class="btn primary" type="submit">Preview cover letter</button>
+      <button class="btn ghost" type="reset">Clear</button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

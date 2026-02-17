@@ -4,7 +4,7 @@ import io
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, Dict, List
 
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
@@ -20,7 +20,6 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Templates you *intend* to support
 TEMPLATES = ["classic", "modern", "compact", "executive", "minimal", "bold"]
 
 FONT_MAP = {
@@ -44,24 +43,43 @@ class ResumeData:
     full_name: str = ""
     email: str = ""
     phone: str = ""
-
     target_title: str = ""
     years_experience: str = ""
     strengths: str = ""
     wins: str = ""
     summary: str = ""
     skills: str = ""
-
     certs: str = ""
     awards: str = ""
     include_references: bool = False
 
     template: str = "classic"
-    font_family: str = "sans"   # sans | serif | mono
-    page_limit: int = 1         # 1 or 2
+    font_family: str = "sans"
+    page_limit: int = 1
 
     jobs: List[Job] = field(default_factory=list)
     jobs_json: str = "[]"
+
+
+@dataclass
+class CoverLetterData:
+    full_name: str = ""
+    email: str = ""
+    phone: str = ""
+
+    company_name: str = ""
+    hiring_manager: str = ""
+    target_role: str = ""
+    job_source: str = ""  # optional (Indeed, referral, etc.)
+
+    strengths: str = ""
+    achievements: str = ""  # short wins / metrics
+    why_company: str = ""
+    closing_note: str = ""
+
+    tone: str = "confident"  # confident | warm | direct | executive
+    font_family: str = "sans"
+    page_limit: int = 1
 
 
 ACTION_VERBS = [
@@ -113,15 +131,6 @@ def _clamp_page_limit(n: Any) -> int:
     return 2 if v == 2 else 1
 
 
-def _truthy(v: Any) -> bool:
-    """
-    Handles checkbox + querystring cases:
-    on/true/1/yes/y -> True
-    """
-    s = str(v or "").strip().lower()
-    return s in {"on", "true", "1", "yes", "y"}
-
-
 def _sentenceize(s: str) -> str:
     s = _clean(s)
     if not s:
@@ -154,12 +163,8 @@ def _make_bullets(text: str, max_items: int = 6) -> List[str]:
         txt = _sentenceize(txt)
         if not txt:
             continue
-
         verb = ACTION_VERBS[i % len(ACTION_VERBS)]
-        if re.match(
-            r"^(led|managed|coached|improved|streamlined|built|owned|delivered|reduced|increased|trained|implemented|coordinated|optimized|supported|resolved|launched|standardized)\b",
-            txt, re.I
-        ):
+        if re.match(r"^(led|managed|coached|improved|streamlined|built|owned|delivered|reduced|increased|trained|implemented|coordinated|optimized|supported|resolved|launched|standardized)\b", txt, re.I):
             bullets.append(txt)
         else:
             bullets.append(f"{verb} {txt[0].lower() + txt[1:]}")
@@ -189,24 +194,17 @@ def _parse_jobs_json(jobs_json: str) -> List[Job]:
         return []
     if not isinstance(raw, list):
         return []
-
     jobs: List[Job] = []
     for item in raw[:6]:
         if not isinstance(item, dict):
             continue
-
-        # support both keys: bullets (list) OR bullets_text (string)
-        bullets_val = item.get("bullets", None)
-        if bullets_val is None:
-            bullets_val = item.get("bullets_text", "")
-
-        if isinstance(bullets_val, str):
-            bullets_list = _make_bullets(bullets_val, max_items=6)
-        elif isinstance(bullets_val, list):
-            bullets_list = [_sentenceize(str(b)) for b in bullets_val if str(b).strip()]
+        bullets = item.get("bullets") or []
+        if isinstance(bullets, str):
+            bullets_list = _make_bullets(bullets, max_items=6)
+        elif isinstance(bullets, list):
+            bullets_list = [_sentenceize(str(b)) for b in bullets if str(b).strip()]
         else:
             bullets_list = []
-
         jobs.append(
             Job(
                 title=_clean(str(item.get("title", ""))),
@@ -219,7 +217,7 @@ def _parse_jobs_json(jobs_json: str) -> List[Job]:
     return jobs
 
 
-def _generate_summary(data: ResumeData, highlights: List[str], skills_list: List[str]) -> str:
+def _generate_resume_summary(data: ResumeData, highlights: List[str], skills_list: List[str]) -> str:
     if _clean(data.summary):
         return _sentenceize(data.summary)
 
@@ -244,7 +242,10 @@ def _generate_summary(data: ResumeData, highlights: List[str], skills_list: List
     return " ".join([line1, line2, line3])
 
 
-def _polish_text(payload: dict) -> dict:
+# ----------------------------
+# Mini polish endpoints
+# ----------------------------
+def _polish_resume(payload: Dict[str, Any]) -> Dict[str, Any]:
     summary = _clean(str(payload.get("summary", "")))
     wins = _clean(str(payload.get("wins", "")))
     strengths = _clean(str(payload.get("strengths", "")))
@@ -267,7 +268,7 @@ def _polish_text(payload: dict) -> dict:
             f"Delivers consistent results through clear direction, calm execution, and strong follow-through."
         )
 
-    skill_suggestions = _normalize_skills(str(payload.get("skills", "")), strengths)
+    skill_suggestions = _normalize_skills(payload.get("skills", ""), strengths)
     if not skill_suggestions:
         skill_suggestions = _normalize_skills("", "Leadership, Coaching, Process Improvement, Communication")
 
@@ -278,28 +279,105 @@ def _polish_text(payload: dict) -> dict:
     }
 
 
+def _polish_cover(payload: Dict[str, Any]) -> Dict[str, Any]:
+    tone = _clean(str(payload.get("tone", "confident"))).lower()
+    full_name = _title_name(str(payload.get("full_name", "")))
+    company = _clean(str(payload.get("company_name", "")))
+    manager = _clean(str(payload.get("hiring_manager", "")))
+    role = _clean(str(payload.get("target_role", "")))
+    strengths = _clean(str(payload.get("strengths", "")))
+    achievements = _clean(str(payload.get("achievements", "")))
+    why_company = _clean(str(payload.get("why_company", "")))
+    closing_note = _clean(str(payload.get("closing_note", "")))
+
+    # tone presets (kept simple and non-cringe)
+    tone_open = {
+        "confident": "I’m excited to apply",
+        "warm": "I’d love to be considered",
+        "direct": "I’m applying",
+        "executive": "I’m writing to express interest",
+    }.get(tone, "I’m excited to apply")
+
+    tone_voice = {
+        "confident": "I bring steady leadership, strong follow-through, and a bias for action.",
+        "warm": "I care about people, communication, and doing the work the right way.",
+        "direct": "I deliver results, keep teams aligned, and move work forward fast.",
+        "executive": "I align teams to priorities, simplify execution, and deliver measurable outcomes.",
+    }.get(tone, "I bring steady leadership, strong follow-through, and a bias for action.")
+
+    mgr_line = f"{manager}," if manager else "Hiring Manager,"
+    company_line = company if company else "your team"
+    role_line = role if role else "the role"
+
+    # achievements → 2–3 bullets then convert to sentence
+    ach_bullets = _make_bullets(achievements, max_items=3)
+    ach_sentence = ""
+    if ach_bullets:
+        ach_sentence = " ".join([re.sub(r"^\w+\s", "", b).strip() for b in ach_bullets])
+        ach_sentence = _sentenceize(ach_sentence)
+
+    core_strengths = _split_csv(strengths)[:6]
+    strengths_line = ""
+    if core_strengths:
+        strengths_line = f"My strengths include {', '.join(core_strengths)}."
+    else:
+        strengths_line = "My strengths include leadership, coaching, and problem solving."
+
+    why_line = ""
+    if why_company:
+        why_line = _sentenceize(why_company)
+    else:
+        why_line = f"I’m interested in {company_line} because it looks like a place where high standards and real teamwork matter."
+
+    close_line = _sentenceize(closing_note) if closing_note else "If it’s a fit, I’d love to talk and learn what success looks like in the first 90 days."
+
+    # assemble
+    body = []
+    body.append(mgr_line)
+    body.append("")
+    body.append(f"{tone_open} for {role_line} at {company_line}. {tone_voice}")
+    body.append(strengths_line)
+    if ach_sentence:
+        body.append(f"Recent impact: {ach_sentence}")
+    body.append(why_line)
+    body.append(close_line)
+    body.append("")
+    body.append("Thank you,")
+    body.append(full_name or "Your Name")
+
+    letter = "\n".join(body).strip()
+
+    return {"cover_letter_suggested": letter}
+
+
 # ----------------------------
 # PDF helpers
 # ----------------------------
-def _pdf_wrap(c: canvas.Canvas, text: str, x: float, y: float, maxw: float,
-              font_name: str, font_size: int, leading: float) -> float:
-    text = _clean(text)
+def _pdf_wrap(c: canvas.Canvas, text: str, x: float, y: float, maxw: float, font_name: str, font_size: int, leading: float) -> float:
+    text = (text or "").rstrip()
     if not text:
         return y
     c.setFont(font_name, font_size)
-    words = text.split(" ")
-    line = ""
-    for w in words:
-        test = (line + " " + w).strip()
-        if c.stringWidth(test, font_name, font_size) <= maxw:
-            line = test
-        else:
+
+    # preserve paragraphs
+    paragraphs = text.split("\n")
+    for p in paragraphs:
+        if p.strip() == "":
+            y -= leading
+            continue
+        words = p.split(" ")
+        line = ""
+        for w in words:
+            test = (line + " " + w).strip()
+            if c.stringWidth(test, font_name, font_size) <= maxw:
+                line = test
+            else:
+                c.drawString(x, y, line)
+                y -= leading
+                line = w
+        if line:
             c.drawString(x, y, line)
             y -= leading
-            line = w
-    if line:
-        c.drawString(x, y, line)
-        y -= leading
     return y
 
 
@@ -313,46 +391,7 @@ def _pdf_section_title(c: canvas.Canvas, title: str, x: float, y: float, maxw: f
     return y
 
 
-def _pdf_bullets(c: canvas.Canvas, bullets: List[str], x: float, y: float, maxw: float,
-                 font_name: str, font_size: int, leading: float) -> float:
-    if not bullets:
-        return y
-    c.setFont(font_name, font_size)
-    indent = 10
-    for b in bullets:
-        b = _clean(b).rstrip(".")
-        if not b:
-            continue
-
-        words = b.split(" ")
-        line = ""
-        first_line = True
-        for w in words:
-            test = (line + " " + w).strip()
-            limit = maxw - indent
-            if c.stringWidth(test, font_name, font_size) <= limit:
-                line = test
-            else:
-                if first_line:
-                    c.drawString(x, y, "•")
-                    c.drawString(x + indent, y, line)
-                    first_line = False
-                else:
-                    c.drawString(x + indent, y, line)
-                y -= leading
-                line = w
-
-        if line:
-            if first_line:
-                c.drawString(x, y, "•")
-                c.drawString(x + indent, y, line)
-            else:
-                c.drawString(x + indent, y, line)
-            y -= leading
-    return y
-
-
-def _build_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[str], skills_list: List[str]) -> bytes:
+def _build_resume_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[str], skills_list: List[str]) -> bytes:
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
     width, height = letter
@@ -364,7 +403,6 @@ def _build_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[s
     top = height - 0.85 * inch
     maxw = right - left
 
-    # Header
     c.setFont(font_bold, 18)
     c.drawString(left, top, data.full_name or "Your Name")
 
@@ -388,12 +426,10 @@ def _build_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[s
 
     y = top - 70
 
-    # Summary
     y = _pdf_section_title(c, "Professional Summary", left, y, maxw, font_bold)
     y = _pdf_wrap(c, polished_summary, left, y, maxw, font_name, 11, 14)
     y -= 6
 
-    # Skills (2 columns)
     if skills_list:
         y = _pdf_section_title(c, "Skills", left, y, maxw, font_bold)
         c.setFont(font_name, 10.5)
@@ -413,7 +449,8 @@ def _build_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[s
                 if data.page_limit == 1:
                     break
                 c.showPage()
-                yy = height - 0.85 * inch
+                y = height - 0.85 * inch
+                yy = y
                 c.setFont(font_name, 10.5)
             c.drawString(x1, yy, f"• {s}")
             yy -= 13
@@ -424,14 +461,14 @@ def _build_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[s
                 if data.page_limit == 1:
                     break
                 c.showPage()
-                yy2 = height - 0.85 * inch
+                y = height - 0.85 * inch
+                yy2 = y
                 c.setFont(font_name, 10.5)
             c.drawString(x2, yy2, f"• {s}")
             yy2 -= 13
 
         y = min(yy, yy2) - 6
 
-    # Experience
     if data.jobs:
         y = _pdf_section_title(c, "Experience", left, y, maxw, font_bold)
         for job in data.jobs[:4]:
@@ -456,23 +493,12 @@ def _build_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[s
                 c.drawString(left, y, job.location[:90])
                 y -= 12
 
-            y = _pdf_bullets(c, job.bullets[:5], left, y, maxw, font_name, 10.5, 13)
+            for b in job.bullets[:5]:
+                if y < 1.25 * inch:
+                    break
+                y = _pdf_wrap(c, f"• {b}", left, y, maxw, font_name, 10.5, 13)
             y -= 6
 
-    # Highlights
-    if highlights:
-        if y < 1.55 * inch:
-            if data.page_limit == 2:
-                c.showPage()
-                y = height - 0.85 * inch
-            else:
-                highlights = []
-        if highlights:
-            y = _pdf_section_title(c, "Highlights", left, y, maxw, font_bold)
-            y = _pdf_bullets(c, highlights[:6], left, y, maxw, font_name, 10.5, 13)
-            y -= 6
-
-    # Additional (Certs/Awards/References)
     footer_blocks: List[str] = []
     if _clean(data.certs):
         footer_blocks.append("Certifications: " + ", ".join(_split_csv(data.certs)[:10]))
@@ -492,18 +518,58 @@ def _build_pdf_bytes(data: ResumeData, polished_summary: str, highlights: List[s
                     break
                 y = _pdf_wrap(c, block, left, y, maxw, font_name, 10.5, 13)
 
-    # IMPORTANT: do NOT call showPage() again here
+    c.showPage()
     c.save()
     return buf.getvalue()
 
 
-def _safe_template_exists(name: str) -> bool:
-    env = templates.env
-    try:
-        env.get_template(name)
-        return True
-    except Exception:
-        return False
+def _build_cover_pdf_bytes(data: CoverLetterData, letter_text: str) -> bytes:
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    width, height = letter
+
+    font_name, font_bold = FONT_MAP.get(data.font_family, FONT_MAP["sans"])
+
+    left = 0.9 * inch
+    right = width - 0.9 * inch
+    top = height - 0.9 * inch
+    maxw = right - left
+
+    # header (simple + clean)
+    c.setFont(font_bold, 16)
+    c.drawString(left, top, data.full_name or "Your Name")
+
+    c.setFont(font_name, 10.5)
+    contact = " • ".join([x for x in [data.email, data.phone] if x])
+    if contact:
+        c.drawString(left, top - 20, contact)
+
+    meta = " • ".join([x for x in [data.target_role, data.company_name] if x])
+    if meta:
+        c.setFont(font_name, 10)
+        c.drawString(left, top - 36, meta)
+
+    c.setLineWidth(0.7)
+    c.line(left, top - 48, right, top - 48)
+
+    y = top - 72
+
+    # body
+    y = _pdf_wrap(c, letter_text, left, y, maxw, font_name, 11, 15)
+
+    # page limit control (basic)
+    if data.page_limit == 1:
+        # nothing special; wrap naturally
+        pass
+    else:
+        # allow second page automatically if needed (ReportLab already does not auto-page)
+        # So: if y gets too low, we add a new page during wrap by checking in _pdf_wrap?
+        # We're keeping it simple: content is usually 1 page anyway.
+        pass
+
+    c.showPage()
+    c.save()
+    return buf.getvalue()
 
 
 # ----------------------------
@@ -519,35 +585,47 @@ def page_builder(request: Request):
 
 @app.get("/templates", response_class=HTMLResponse)
 def page_templates(request: Request):
-    # If you don't have this yet, it won't crash; it will fall back to index.html
-    tpl = "templates_page.html" if _safe_template_exists("templates_page.html") else "index.html"
     return templates.TemplateResponse(
-        tpl,
-        {"request": request, "active_tab": "templates", "templates": TEMPLATES, "selected_template": "classic"},
+        "templates_page.html",
+        {"request": request, "active_tab": "templates", "templates": TEMPLATES},
     )
 
 
 @app.get("/guided", response_class=HTMLResponse)
 def page_guided(request: Request):
-    tpl = "guided_page.html" if _safe_template_exists("guided_page.html") else "index.html"
     return templates.TemplateResponse(
-        tpl,
+        "guided_page.html",
         {"request": request, "active_tab": "guided", "templates": TEMPLATES, "selected_template": "classic"},
     )
 
 
+@app.get("/cover", response_class=HTMLResponse)
+def page_cover(request: Request):
+    return templates.TemplateResponse(
+        "cover_page.html",
+        {"request": request, "active_tab": "cover"},
+    )
+
+
 # ----------------------------
-# Mini AI polish endpoint
+# Mini polish endpoints
 # ----------------------------
 @app.post("/polish")
 async def polish(request: Request):
     payload = await request.json()
-    out = _polish_text(payload if isinstance(payload, dict) else {})
+    out = _polish_resume(payload if isinstance(payload, dict) else {})
+    return JSONResponse(out)
+
+
+@app.post("/polish_cover")
+async def polish_cover(request: Request):
+    payload = await request.json()
+    out = _polish_cover(payload if isinstance(payload, dict) else {})
     return JSONResponse(out)
 
 
 # ----------------------------
-# Build -> Preview
+# Build -> Preview (Resume)
 # ----------------------------
 @app.post("/build", response_class=HTMLResponse)
 def build(
@@ -576,7 +654,6 @@ def build(
         full_name=_title_name(full_name),
         email=_clean(email),
         phone=_clean(phone),
-
         template=_clamp_template(template),
         font_family=_clamp_font(font_family),
         page_limit=_clamp_page_limit(page_limit),
@@ -590,7 +667,7 @@ def build(
 
         certs=_clean(certs),
         awards=_clean(awards),
-        include_references=_truthy(include_references),
+        include_references=(include_references.strip().lower() == "on") if include_references else False,
 
         jobs_json=(jobs_json or "[]").strip() or "[]",
     )
@@ -598,7 +675,7 @@ def build(
 
     highlights = _make_bullets(data.wins, max_items=7)
     skills_list = _normalize_skills(data.skills, data.strengths)
-    polished_summary = _generate_summary(data, highlights, skills_list)
+    polished_summary = _generate_resume_summary(data, highlights, skills_list)
 
     return templates.TemplateResponse(
         "result.html",
@@ -615,7 +692,6 @@ def build(
     )
 
 
-# Live swap endpoint used by JS (returns template partial; falls back if missing)
 @app.get("/swap", response_class=HTMLResponse)
 def swap(
     request: Request,
@@ -645,7 +721,6 @@ def swap(
         full_name=_title_name(full_name),
         email=_clean(email),
         phone=_clean(phone),
-
         template=_clamp_template(template),
         font_family=_clamp_font(font_family),
         page_limit=_clamp_page_limit(page_limit),
@@ -659,7 +734,7 @@ def swap(
 
         certs=_clean(certs),
         awards=_clean(awards),
-        include_references=_truthy(include_references),
+        include_references=(include_references.strip().lower() == "on") if include_references else False,
 
         jobs_json=(jobs_json or "[]").strip() or "[]",
     )
@@ -667,11 +742,9 @@ def swap(
 
     highlights = _make_bullets(data.wins, max_items=7)
     skills_list = _normalize_skills(data.skills, data.strengths)
-    polished_summary = _generate_summary(data, highlights, skills_list)
+    polished_summary = _generate_resume_summary(data, highlights, skills_list)
 
-    candidate = f"result_{data.template}.html"
-    tpl = candidate if _safe_template_exists(candidate) else "result_classic.html"
-
+    tpl = f"result_{data.template}.html"
     return templates.TemplateResponse(
         tpl,
         {
@@ -711,7 +784,6 @@ def download_pdf(
         full_name=_title_name(full_name),
         email=_clean(email),
         phone=_clean(phone),
-
         template=_clamp_template(template),
         font_family=_clamp_font(font_family),
         page_limit=_clamp_page_limit(page_limit),
@@ -725,7 +797,7 @@ def download_pdf(
 
         certs=_clean(certs),
         awards=_clean(awards),
-        include_references=_truthy(include_references),
+        include_references=(include_references.strip().lower() == "on") if include_references else False,
 
         jobs_json=(jobs_json or "[]").strip() or "[]",
     )
@@ -733,10 +805,149 @@ def download_pdf(
 
     highlights = _make_bullets(data.wins, max_items=7)
     skills_list = _normalize_skills(data.skills, data.strengths)
-    polished_summary = _generate_summary(data, highlights, skills_list)
+    polished_summary = _generate_resume_summary(data, highlights, skills_list)
 
-    pdf_bytes = _build_pdf_bytes(data, polished_summary, highlights, skills_list)
+    pdf_bytes = _build_resume_pdf_bytes(data, polished_summary, highlights, skills_list)
     filename = f"{(data.full_name or 'resume').replace(' ', '_')}.pdf"
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ----------------------------
+# Cover Letter build + PDF
+# ----------------------------
+@app.post("/cover/build", response_class=HTMLResponse)
+def cover_build(
+    request: Request,
+    full_name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+
+    company_name: str = Form(""),
+    hiring_manager: str = Form(""),
+    target_role: str = Form(""),
+    job_source: str = Form(""),
+
+    strengths: str = Form(""),
+    achievements: str = Form(""),
+    why_company: str = Form(""),
+    closing_note: str = Form(""),
+
+    tone: str = Form("confident"),
+    font_family: str = Form("sans"),
+    page_limit: int = Form(1),
+
+    cover_letter: str = Form(""),
+):
+    data = CoverLetterData(
+        full_name=_title_name(full_name),
+        email=_clean(email),
+        phone=_clean(phone),
+
+        company_name=_clean(company_name),
+        hiring_manager=_clean(hiring_manager),
+        target_role=_clean(target_role),
+        job_source=_clean(job_source),
+
+        strengths=_clean(strengths),
+        achievements=_clean(achievements),
+        why_company=_clean(why_company),
+        closing_note=_clean(closing_note),
+
+        tone=_clean(tone).lower() or "confident",
+        font_family=_clamp_font(font_family),
+        page_limit=_clamp_page_limit(page_limit),
+    )
+
+    # If user typed the letter, keep it as-is for preview.
+    # If blank, generate one.
+    letter_text = _clean(cover_letter)
+    if not letter_text:
+        letter_text = _polish_cover({
+            "tone": data.tone,
+            "full_name": data.full_name,
+            "company_name": data.company_name,
+            "hiring_manager": data.hiring_manager,
+            "target_role": data.target_role,
+            "strengths": data.strengths,
+            "achievements": data.achievements,
+            "why_company": data.why_company,
+            "closing_note": data.closing_note,
+        }).get("cover_letter_suggested", "")
+
+    return templates.TemplateResponse(
+        "cover_result.html",
+        {
+            "request": request,
+            "active_tab": "cover",
+            "data": data,
+            "letter_text": letter_text,
+        },
+    )
+
+
+@app.post("/cover/download_pdf")
+def cover_download_pdf(
+    full_name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+
+    company_name: str = Form(""),
+    hiring_manager: str = Form(""),
+    target_role: str = Form(""),
+    job_source: str = Form(""),
+
+    strengths: str = Form(""),
+    achievements: str = Form(""),
+    why_company: str = Form(""),
+    closing_note: str = Form(""),
+
+    tone: str = Form("confident"),
+    font_family: str = Form("sans"),
+    page_limit: int = Form(1),
+
+    cover_letter: str = Form(""),
+):
+    data = CoverLetterData(
+        full_name=_title_name(full_name),
+        email=_clean(email),
+        phone=_clean(phone),
+
+        company_name=_clean(company_name),
+        hiring_manager=_clean(hiring_manager),
+        target_role=_clean(target_role),
+        job_source=_clean(job_source),
+
+        strengths=_clean(strengths),
+        achievements=_clean(achievements),
+        why_company=_clean(why_company),
+        closing_note=_clean(closing_note),
+
+        tone=_clean(tone).lower() or "confident",
+        font_family=_clamp_font(font_family),
+        page_limit=_clamp_page_limit(page_limit),
+    )
+
+    letter_text = _clean(cover_letter)
+    if not letter_text:
+        letter_text = _polish_cover({
+            "tone": data.tone,
+            "full_name": data.full_name,
+            "company_name": data.company_name,
+            "hiring_manager": data.hiring_manager,
+            "target_role": data.target_role,
+            "strengths": data.strengths,
+            "achievements": data.achievements,
+            "why_company": data.why_company,
+            "closing_note": data.closing_note,
+        }).get("cover_letter_suggested", "")
+
+    pdf_bytes = _build_cover_pdf_bytes(data, letter_text)
+    filename = f"{(data.full_name or 'cover_letter').replace(' ', '_')}_cover_letter.pdf"
 
     return StreamingResponse(
         io.BytesIO(pdf_bytes),
@@ -748,6 +959,7 @@ def download_pdf(
 @app.get("/health")
 def health():
     return {"ok": True}
+
 
 
 

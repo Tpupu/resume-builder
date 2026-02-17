@@ -11,7 +11,6 @@
   <!-- JS for dissolve + live template swap -->
   <script defer src="/static/app.js?v=20260217a"></script>
 
-
   <style>
     :root{
       --bg:#0b0b0c;
@@ -223,6 +222,9 @@
         <a class="tab {{ 'on' if active_tab=='builder' else '' }}" href="/">Resume Builder</a>
         <a class="tab {{ 'on' if active_tab=='templates' else '' }}" href="/templates">Templates + PDF</a>
         <a class="tab {{ 'on' if active_tab=='guided' else '' }}" href="/guided">Guided questions</a>
+
+        <!-- NEW TAB -->
+        <a class="tab {{ 'on' if active_tab=='cover' else '' }}" href="/cover">Cover Letter</a>
       </nav>
     </div>
   </header>
