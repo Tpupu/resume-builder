@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="top">
+  <div>
+    <h1>Guided questions</h1>
+    <div class="sub">If you don’t know what to write, answer these and the app builds it clean.</div>
+  </div>
+  <a class="btn ghost" href="/">Builder</a>
+</div>
+
+<div class="card">
+  <form method="post" action="/build" id="guidedForm">
+    <div class="row">
+      <div>
+        <label>Full name</label>
+        <input name="full_name" placeholder="Your name" />
+      </div>
+      <div>
+        <label>Template</label>
+        <select name="template">
+          {% for t in templates %}
+            <option value="{{ t }}" {% if t == selected_template %}selected{% endif %}>{{ t|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Email</label>
+        <input name="email" placeholder="you@email.com" />
+      </div>
+      <div>
+        <label>Target job title</label>
+        <input name="target_title" placeholder="Area Manager / Front Desk / IT Support" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Phone (optional)</label>
+        <input name="phone" placeholder="(555) 555-5555" />
+      </div>
+      <div>
+        <label>Years of experience</label>
+        <input name="years_experience" placeholder="10+" />
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <label>Top strengths (comma-separated)</label>
+      <input name="strengths" placeholder="Leadership, Coaching, Customer service, Process improvement" />
+    </div>
+
+    <div>
+      <label>Big wins (short)</label>
+      <textarea name="wins" placeholder="Trained new hires, improved speed, hit goals, reduced errors..."></textarea>
+      <div class="hint">Short is fine. We convert it into strong bullet points.</div>
+    </div>
+
+    <div>
+      <label>Professional summary (optional)</label>
+      <textarea name="summary" placeholder="If you leave this blank, we generate it from your answers."></textarea>
+    </div>
+
+    <div>
+      <label>Skills (comma-separated)</label>
+      <input name="skills" placeholder="Leadership, Safety, Excel, Training, ..." />
+    </div>
+
+    <div class="row3" style="margin-top:14px;">
+      <div>
+        <label>Font</label>
+        <select name="font_family">
+          <option value="sans" selected>Sans (clean)</option>
+          <option value="serif">Serif (formal)</option>
+          <option value="mono">Mono (tech)</option>
+        </select>
+      </div>
+      <div>
+        <label>Target pages (PDF)</label>
+        <select name="page_limit">
+          <option value="1" selected>1 page</option>
+          <option value="2">2 pages</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:end;">
+        <button class="btn primary" type="submit" style="width:100%;">Build resume</button>
+      </div>
+    </div>
+
+    <input id="jobsJsonGuided" type="hidden" name="jobs_json" value="[]"/>
+    <input type="hidden" name="certs" value="">
+    <input type="hidden" name="awards" value="">
+    <input type="hidden" name="include_references" value="">
+  </form>
+</div>
+
+{% endblock %}
+
+

@@ -1,108 +1,192 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Resume Builder</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
+{% extends "base.html" %}
+{% block content %}
 
-<body>
-  <div class="page">
-    <div class="card">
-      <nav class="topnav">
-        <a href="/" class="pill active">Resume Builder</a>
-        <a href="#templates" class="pill">Templates + PDF</a>
-        <a href="#guided" class="pill">Guided questions</a>
-      </nav>
-
-      <header class="hero">
-        <h1>Resume Builder</h1>
-        <p class="sub">
-          Fill this out and get a clean resume preview. Choose a template. Download a PDF.
-        </p>
-      </header>
-
-      <form method="post" action="/build" class="form">
-        <div class="grid2">
-          <div class="field">
-            <label for="full_name">Full name</label>
-            <input id="full_name" name="full_name" type="text" placeholder="Your name" value="{{ default_full_name or '' }}" />
-          </div>
-
-          <div class="field">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="you@email.com" value="{{ default_email or '' }}" />
-          </div>
-
-          <div class="field">
-            <label for="phone">Phone</label>
-            <input id="phone" name="phone" type="text" placeholder="(555) 555-5555" value="{{ default_phone or '' }}" />
-            <div class="hint">Tip: keep it simple. You can polish later.</div>
-          </div>
-
-          <div class="field" id="templates">
-            <label for="template">Template</label>
-            <select id="template" name="template">
-              <option value="classic" selected>Classic</option>
-              <option value="modern">Modern</option>
-              <option value="compact">Compact</option>
-            </select>
-            <div class="hint">This changes the look of the preview.</div>
-          </div>
-        </div>
-
-        <div class="soft-divider" id="guided"></div>
-
-        <div class="muted-title">Guided questions (helps build your summary)</div>
-
-        <div class="grid2">
-          <div class="field">
-            <label for="target_title">Target job title</label>
-            <input id="target_title" name="target_title" type="text" placeholder="Area Manager / Customer Service / IT Support" value="{{ default_target_title or '' }}" />
-            <div class="hint">Example: “Area Manager”, “Front Desk Agent”, “Data Analyst”.</div>
-          </div>
-
-          <div class="field">
-            <label for="years_experience">Years of experience</label>
-            <input id="years_experience" name="years_experience" type="text" placeholder="10+" value="{{ default_years_experience or '' }}" />
-            <div class="hint">Example: “3”, “5”, “10+”.</div>
-          </div>
-
-          <div class="field">
-            <label for="strengths">Top strengths (comma-separated)</label>
-            <input id="strengths" name="strengths" type="text" placeholder="Leadership, Coaching, Problem solving" value="{{ default_strengths or '' }}" />
-            <div class="hint">These can be used to help generate your summary.</div>
-          </div>
-
-          <div class="field">
-            <label for="wins">Big wins (short)</label>
-            <input id="wins" name="wins" type="text" placeholder="Improved speed, trained team, hit goals" value="{{ default_wins or '' }}" />
-            <div class="hint">Keep it short — we’ll turn it into bullets.</div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="summary">Professional summary (optional)</label>
-          <textarea id="summary" name="summary" rows="5" placeholder="Write a short summary...">{{ default_summary or '' }}</textarea>
-          <div class="hint">If you leave this blank, the app will generate a basic summary from your guided answers.</div>
-        </div>
-
-        <div class="field">
-          <label for="skills">Skills (comma-separated)</label>
-          <textarea id="skills" name="skills" rows="3" placeholder="Leadership, Process Improvement, ...">{{ default_skills or '' }}</textarea>
-          <div class="hint">If blank, we’ll use strengths + common skills based on your target title.</div>
-        </div>
-
-        <div class="actions">
-          <button class="btn primary" type="submit">Build resume</button>
-          <button class="btn" type="reset">Clear</button>
-        </div>
-      </form>
-    </div>
+<div class="top">
+  <div>
+    <h1>Resume Builder</h1>
+    <div class="sub">Fill it out, generate a strong preview, then export PDF.</div>
   </div>
-</body>
-</html>
+</div>
+
+<div class="card">
+  <form id="resumeForm" method="post" action="/build">
+
+    <div class="row">
+      <div>
+        <label>Full name</label>
+        <input id="full_name" name="full_name" placeholder="Your name" />
+      </div>
+      <div>
+        <label>Email</label>
+        <input id="email" name="email" placeholder="you@email.com" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Phone</label>
+        <input id="phone" name="phone" placeholder="(555) 555-5555" />
+        <div class="hint">Tip: keep it simple. You can polish later.</div>
+      </div>
+      <div>
+        <label>Template</label>
+        <select id="template" name="template">
+          {% for t in templates %}
+            <option value="{{ t }}" {% if t == selected_template %}selected{% endif %}>{{ t|capitalize }}</option>
+          {% endfor %}
+        </select>
+        <div class="hint">You can also swap instantly on Preview.</div>
+      </div>
+    </div>
+
+    <div class="row3">
+      <div>
+        <label>Font</label>
+        <select id="font_family" name="font_family">
+          <option value="sans" selected>Sans (clean)</option>
+          <option value="serif">Serif (formal)</option>
+          <option value="mono">Mono (tech)</option>
+        </select>
+      </div>
+      <div>
+        <label>Target pages (PDF)</label>
+        <select id="page_limit" name="page_limit">
+          <option value="1" selected>1 page</option>
+          <option value="2">2 pages</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:end; gap:12px;">
+        <button id="polishBtn" type="button" class="btn ghost" style="width:100%;">Polish my wording</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="row">
+      <div>
+        <label>Target job title</label>
+        <input id="target_title" name="target_title" placeholder="Area Manager / Front Desk / IT Support" />
+        <div class="hint">Example: “Area Manager”, “Front Desk Agent”, “Data Analyst”.</div>
+      </div>
+      <div>
+        <label>Years of experience</label>
+        <input id="years_experience" name="years_experience" placeholder="10+" />
+        <div class="hint">Example: “3”, “5”, “10+”.</div>
+      </div>
+    </div>
+
+    <div>
+      <label>Top strengths (comma-separated)</label>
+      <input id="strengths" name="strengths" placeholder="Leadership, Coaching, Process improvement" />
+    </div>
+
+    <div>
+      <label>Big wins (short)</label>
+      <textarea id="wins" name="wins" placeholder="Trained new hires, improved speed, hit goals, reduced errors..."></textarea>
+      <div class="hint">Short is fine. We convert it into strong bullet points.</div>
+    </div>
+
+    <div>
+      <label>Professional summary (optional)</label>
+      <textarea id="summary" name="summary" placeholder="If you leave this blank, we generate it from your answers."></textarea>
+      <div class="hint">If you type here, we can still suggest a cleaner version.</div>
+    </div>
+
+    <div>
+      <label>Skills (comma-separated)</label>
+      <input id="skills" name="skills" placeholder="Leadership, Safety, Excel, Training, ..." />
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:end; gap:14px;">
+      <div>
+        <div style="font-weight:800; font-size:16px; margin-bottom:6px;">Experience</div>
+        <div class="hint">Add 1–3 roles. This makes the resume feel real instantly.</div>
+      </div>
+      <button id="addJobBtn" type="button" class="btn ghost">+ Add role</button>
+    </div>
+
+    <div id="jobsWrap" style="margin-top:12px;"></div>
+
+    <input id="jobsJson" type="hidden" name="jobs_json" value="[]"/>
+
+    <div class="divider"></div>
+
+    <div class="row">
+      <div>
+        <label>Certifications (comma-separated)</label>
+        <input id="certs" name="certs" placeholder="CompTIA A+, OSHA 10, ..." />
+      </div>
+      <div>
+        <label>Awards (comma-separated)</label>
+        <input id="awards" name="awards" placeholder="Top Performer, Safety Award, ..." />
+      </div>
+    </div>
+
+    <label style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+      <input id="include_references" type="checkbox" name="include_references" style="width:auto; transform:translateY(1px);" />
+      Add “References available upon request”
+    </label>
+
+    <!-- Optional: if you want to control auto-apply behavior -->
+    <label style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+      <input id="autoApply" type="checkbox" checked style="width:auto; transform:translateY(1px);" />
+      Auto-apply summary polish while typing
+    </label>
+
+    <!-- Optional suggestion boxes (JS will use them if present) -->
+    <div id="sugSummaryBox" class="card" style="margin-top:14px; display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <div style="font-weight:800;">Suggested summary</div>
+        <button id="sugSummaryApply" type="button" class="btn primary">Apply</button>
+      </div>
+      <div id="sugSummaryText" class="hint" style="margin-top:10px; font-size:14px; color:var(--text);"></div>
+    </div>
+
+    <div id="sugWinsBox" class="card" style="margin-top:14px; display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <div style="font-weight:800;">Suggested highlights</div>
+        <button id="sugWinsApply" type="button" class="btn primary">Apply</button>
+      </div>
+      <ul id="sugWinsList" style="margin:10px 0 0 18px;"></ul>
+    </div>
+
+    <div id="sugSkillsBox" class="card" style="margin-top:14px; display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <div style="font-weight:800;">Suggested skills</div>
+        <button id="sugSkillsApply" type="button" class="btn primary">Apply</button>
+      </div>
+      <div id="sugSkillsText" class="hint" style="margin-top:10px; font-size:14px; color:var(--text);"></div>
+    </div>
+
+    <div class="btns">
+      <button class="btn primary" type="submit">Build my resume</button>
+      <button class="btn ghost" type="reset">Clear</button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+  // Make your "Polish my wording" button actually trigger the same flow
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("polishBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+      // Just nudge inputs to trigger the JS listener if it exists
+      const ev = new Event("input", { bubbles: true });
+      const fields = ["summary","wins","skills","strengths","target_title","years_experience"]
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+
+      fields.forEach(f => f.dispatchEvent(ev));
+    });
+  });
+</script>
+
+{% endblock %}
 
 
 

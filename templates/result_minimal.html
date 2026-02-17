@@ -1,0 +1,58 @@
+<div class="preview" style="background:rgba(0,0,0,.18);">
+  <div style="font-family:var(--resume-font);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div class="name" style="font-size:34px;">{{ data.full_name }}</div>
+        <div class="small">{{ data.email }}{% if data.phone %} • {{ data.phone }}{% endif %}</div>
+        <div class="small">{% if data.target_title %}{{ data.target_title }}{% endif %}{% if data.years_experience %} • {{ data.years_experience }} yrs{% endif %}</div>
+      </div>
+      <div class="small" style="opacity:.9;">{{ data.template|capitalize }}</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="line-height:1.75;">{{ polished_summary }}</div>
+
+    {% if skills_list %}
+      <div class="divider"></div>
+      <div class="small"><b>Skills:</b> {{ skills_list|join(" • ") }}</div>
+    {% endif %}
+
+    {% if highlights %}
+      <div class="divider"></div>
+      <div class="small"><b>Highlights:</b></div>
+      <ul>
+        {% for h in highlights %}
+          <li>{{ h }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if data.jobs and data.jobs|length > 0 %}
+      <div class="divider"></div>
+      <div class="small"><b>Experience:</b></div>
+      {% for j in data.jobs %}
+        <div style="margin-top:10px;">
+          <div style="font-weight:800;">{{ j.title }}{% if j.company %} — {{ j.company }}{% endif %}</div>
+          <div class="small">{% if j.location %}{{ j.location }} • {% endif %}{{ j.dates }}</div>
+          {% if j.bullets %}
+            <ul>
+              {% for b in j.bullets %}
+                <li>{{ b }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if data.certs or data.awards or data.include_references %}
+      <div class="divider"></div>
+      <div class="small" style="line-height:1.6;">
+        {% if data.certs %}<div><b>Certifications:</b> {{ data.certs }}</div>{% endif %}
+        {% if data.awards %}<div><b>Awards:</b> {{ data.awards }}</div>{% endif %}
+        {% if data.include_references %}<div>References available upon request.</div>{% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>

@@ -1,31 +1,50 @@
 <div class="preview">
   <div style="font-family:var(--resume-font);">
-    <div style="display:flex; justify-content:space-between; gap:14px; align-items:flex-start;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px;">
       <div>
         <div class="name">{{ data.full_name }}</div>
         <div class="contact">
-          {{ data.email }}{% if data.phone %} | {{ data.phone }}{% endif %}
-          {% if data.target_title %} • {{ data.target_title }}{% endif %}
+          {% if data.target_title %}{{ data.target_title }}{% endif %}
+          {% if data.years_experience %} • {{ data.years_experience }} yrs{% endif %}
         </div>
+        <div class="contact">{{ data.email }}{% if data.phone %} | {{ data.phone }}{% endif %}</div>
       </div>
       <div class="chip">{{ data.template|capitalize }}</div>
     </div>
 
     <div class="divider"></div>
 
-    <div class="section-title">Professional Summary</div>
-    <div style="line-height:1.6;">{{ polished_summary }}</div>
+    <div class="section-title">Executive Summary</div>
+    <div style="line-height:1.7;">{{ polished_summary }}</div>
 
-    {% if skills_list %}
-      <div class="section-title">Skills</div>
-      <div class="chips">
-        {% for s in skills_list %}
-          <div class="chip">{{ s }}</div>
-        {% endfor %}
+    <div class="divider"></div>
+
+    <div class="row" style="gap:18px;">
+      <div>
+        {% if highlights %}
+          <div class="section-title">Core Wins</div>
+          <ul>
+            {% for h in highlights %}
+              <li>{{ h }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
       </div>
-    {% endif %}
+
+      <div>
+        {% if skills_list %}
+          <div class="section-title">Key Skills</div>
+          <div class="chips">
+            {% for s in skills_list %}
+              <div class="chip">{{ s }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
 
     {% if data.jobs and data.jobs|length > 0 %}
+      <div class="divider"></div>
       <div class="section-title">Experience</div>
       {% for j in data.jobs %}
         <div class="job">
@@ -47,16 +66,8 @@
       {% endfor %}
     {% endif %}
 
-    {% if highlights %}
-      <div class="section-title">Highlights</div>
-      <ul>
-        {% for h in highlights %}
-          <li>{{ h }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-
     {% if data.certs or data.awards or data.include_references %}
+      <div class="divider"></div>
       <div class="section-title">Additional</div>
       <div class="small" style="line-height:1.6;">
         {% if data.certs %}<div><b>Certifications:</b> {{ data.certs }}</div>{% endif %}
@@ -66,5 +77,3 @@
     {% endif %}
   </div>
 </div>
-
-

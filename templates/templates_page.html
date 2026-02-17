@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="top">
+  <div>
+    <h1>Templates + PDF</h1>
+    <div class="sub">Pick a look. Build one. Switch templates instantly. Export PDF.</div>
+  </div>
+  <a class="btn ghost" href="/">Build</a>
+</div>
+
+<div class="card">
+  <div class="row">
+    <div>
+      <div style="font-weight:800; font-size:16px; margin-bottom:10px;">What’s included</div>
+      <ul style="margin:0 0 10px 18px;">
+        <li>Live template switching on the preview page</li>
+        <li>Polished summary (auto-generated if you leave it blank)</li>
+        <li>Wins → strong bullet points</li>
+        <li>Experience + Certs/Awards + “References” option</li>
+        <li>Font + page target (1–2 pages)</li>
+        <li>One-click PDF export (cleaner styling)</li>
+      </ul>
+      <div class="hint">Tip: add at least 1 number (TPH, volume, %, cost saved). It instantly makes it feel real.</div>
+      <div class="btns">
+        <a class="btn primary" href="/">Go build a resume</a>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="name" style="font-size:32px;">Preview vibes</div>
+      <div class="contact">Classic • Modern • Compact • Executive • Minimal • Bold</div>
+      <div class="divider"></div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        {% for t in templates %}
+          <div class="chip">{{ t|capitalize }}</div>
+        {% endfor %}
+      </div>
+      <div class="small" style="margin-top:14px;">Build your resume, then switch templates on the Preview page using the dropdown.</div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+

@@ -1,74 +1,101 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="resume-wrap">
-  <div class="resume-card">
 
-    <div class="resume-top">
-      <h1 class="resume-name">{{ name }}</h1>
+<div class="top">
+  <div>
+    <h1>Preview</h1>
+    <div class="sub">Switch template, font, and page target. Download PDF when it looks right.</div>
+  </div>
+  <a class="btn ghost" href="/">← Back</a>
+</div>
 
-      <div class="resume-meta">
-        {% if email %}
-          <span class="meta-pill">{{ email }}</span>
-        {% endif %}
-        {% if phone %}
-          <span class="meta-pill">{{ phone }}</span>
-        {% endif %}
-        {% if template %}
-          <span class="meta-pill">Template: {{ template }}</span>
-        {% endif %}
-      </div>
+<div class="card">
+  <div class="row3" style="align-items:end;">
+    <div>
+      <label>Template</label>
+      <select id="templateSwap">
+        {% for t in templates %}
+          <option value="{{ t }}" {% if t == selected_template %}selected{% endif %}>{{ t|capitalize }}</option>
+        {% endfor %}
+      </select>
     </div>
 
-    {% if summary %}
-      <div class="resume-section">
-        <h2>Professional Summary</h2>
-        <div class="resume-body">{{ summary }}</div>
-      </div>
-    {% endif %}
-
-    {% if skills and skills|length > 0 %}
-      <div class="resume-section">
-        <h2>Skills</h2>
-        <div class="skills-badges">
-          {% for s in skills %}
-            <span class="skill-badge">{{ s }}</span>
-          {% endfor %}
-        </div>
-      </div>
-    {% endif %}
-
-    {% if highlights and highlights|length > 0 %}
-      <div class="resume-section">
-        <h2>Highlights</h2>
-        <ul class="bullets">
-          {% for h in highlights %}
-            <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
-
-    <div class="btn-row">
-      <a class="btn" href="/">← Back</a>
-
-      <!-- keep your existing download endpoint name the same as your project -->
-      <!-- If your app uses POST /download-pdf -->
-      <form method="post" action="/download-pdf" style="margin:0;">
-        <input type="hidden" name="name" value="{{ name }}">
-        <input type="hidden" name="email" value="{{ email }}">
-        <input type="hidden" name="phone" value="{{ phone }}">
-        <input type="hidden" name="summary" value="{{ summary }}">
-        <input type="hidden" name="skills_csv" value="{{ (skills|join(', ')) if skills else '' }}">
-        <input type="hidden" name="highlights_csv" value="{{ (highlights|join(', ')) if highlights else '' }}">
-        <input type="hidden" name="template" value="{{ template }}">
-        <button class="btn btn-primary" type="submit">Download PDF</button>
-      </form>
+    <div>
+      <label>Font</label>
+      <select id="fontSwap">
+        <option value="sans" {% if data.font_family == 'sans' %}selected{% endif %}>Sans (clean)</option>
+        <option value="serif" {% if data.font_family == 'serif' %}selected{% endif %}>Serif (formal)</option>
+        <option value="mono" {% if data.font_family == 'mono' %}selected{% endif %}>Mono (tech)</option>
+      </select>
     </div>
 
+    <div>
+      <label>Target pages (PDF)</label>
+      <select id="pageLimit">
+        <option value="1" {% if data.page_limit == 1 %}selected{% endif %}>1 page</option>
+        <option value="2" {% if data.page_limit != 1 %}selected{% endif %}>2 pages</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="btns" style="margin-top:14px;">
+    <form id="downloadForm" method="post" action="/download_pdf" style="margin:0;">
+      <input type="hidden" name="full_name" value="{{ data.full_name }}">
+      <input type="hidden" name="email" value="{{ data.email }}">
+      <input type="hidden" name="phone" value="{{ data.phone }}">
+      <input type="hidden" name="template" value="{{ data.template }}">
+      <input type="hidden" name="target_title" value="{{ data.target_title }}">
+      <input type="hidden" name="years_experience" value="{{ data.years_experience }}">
+      <input type="hidden" name="strengths" value="{{ data.strengths }}">
+      <input type="hidden" name="wins" value="{{ data.wins }}">
+      <input type="hidden" name="summary" value="{{ data.summary }}">
+      <input type="hidden" name="skills" value="{{ data.skills }}">
+      <input type="hidden" name="certs" value="{{ data.certs }}">
+      <input type="hidden" name="awards" value="{{ data.awards }}">
+      <input type="hidden" name="include_references" value="{{ 'on' if data.include_references else '' }}">
+      <input type="hidden" name="jobs_json" value="{{ data.jobs_json }}">
+      <input type="hidden" name="font_family" value="{{ data.font_family }}">
+      <input type="hidden" name="page_limit" value="{{ data.page_limit }}">
+      <button class="btn primary" type="submit">Download PDF</button>
+    </form>
+  </div>
+
+  <div class="divider"></div>
+
+  <form id="swapPayload" style="display:none;">
+    <input type="hidden" name="full_name" value="{{ data.full_name }}">
+    <input type="hidden" name="email" value="{{ data.email }}">
+    <input type="hidden" name="phone" value="{{ data.phone }}">
+    <input type="hidden" name="target_title" value="{{ data.target_title }}">
+    <input type="hidden" name="years_experience" value="{{ data.years_experience }}">
+    <input type="hidden" name="strengths" value="{{ data.strengths }}">
+    <input type="hidden" name="wins" value="{{ data.wins }}">
+    <input type="hidden" name="summary" value="{{ data.summary }}">
+    <input type="hidden" name="skills" value="{{ data.skills }}">
+    <input type="hidden" name="certs" value="{{ data.certs }}">
+    <input type="hidden" name="awards" value="{{ data.awards }}">
+    <input type="hidden" name="include_references" value="{{ 'on' if data.include_references else '' }}">
+    <input type="hidden" name="jobs_json" value="{{ data.jobs_json }}">
+    <input type="hidden" name="font_family" value="{{ data.font_family }}">
+    <input type="hidden" name="page_limit" value="{{ data.page_limit }}">
+    <input type="hidden" name="template" value="{{ data.template }}">
+  </form>
+
+  <div id="resultWrap" data-font="{{ data.font_family }}">
+    {% include "result_" ~ selected_template ~ ".html" %}
   </div>
 </div>
+
+<style>
+  #resultWrap[data-font="sans"] { --resume-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+  #resultWrap[data-font="serif"]{ --resume-font: ui-serif, Georgia, "Times New Roman", Times, serif; }
+  #resultWrap[data-font="mono"] { --resume-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+</style>
+
 {% endblock %}
+
+
+
 
 
 

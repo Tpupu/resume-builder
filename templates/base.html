@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ title if title else "Resume Builder" }}</title>
+
+  <!-- Fix favicon 404 -->
+  <link rel="icon" href="/static/favicon.ico">
+
+  <!-- JS for dissolve + live template swap -->
+  <script defer src="/static/app.js"></script>
+
   <style>
     :root{
       --bg:#0b0b0c;
@@ -27,7 +34,55 @@
       color:var(--text);
     }
     a{color:inherit}
-    .wrap{max-width:var(--max); margin:38px auto; padding:0 18px}
+
+    .wrap{max-width:var(--max); margin:28px auto; padding:0 18px}
+
+    /* Top nav */
+    .nav{
+      position: sticky;
+      top:0;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+      background: rgba(11,11,12,.72);
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .nav-inner{
+      max-width:var(--max);
+      margin:0 auto;
+      padding: 12px 18px;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand{
+      font-weight: 800;
+      letter-spacing: -.01em;
+      color: var(--text);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .tabs{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+    .tab{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      padding:8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      text-decoration:none;
+    }
+    .tab:hover{
+      color: var(--text);
+      border-color: rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+    }
+    .tab.on{
+      color: var(--text);
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.09);
+    }
+
     .top{
       display:flex; align-items:flex-end; justify-content:space-between;
       gap:14px; margin-bottom:16px;
@@ -58,8 +113,9 @@
       border-color: rgba(255,255,255,.22);
       background: rgba(255,255,255,.08);
     }
+
     label{display:block; font-size:13px; color:var(--muted); margin:10px 0 6px}
-    input, textarea{
+    input, textarea, select{
       width:100%;
       padding: 12px 12px;
       border-radius: 12px;
@@ -71,7 +127,9 @@
     textarea{min-height:120px; resize:vertical}
     .row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
     .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px}
+
     .hint{color:var(--muted); font-size:12px; margin-top:6px}
+
     .btns{display:flex; gap:12px; flex-wrap:wrap; margin-top:16px}
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
@@ -90,10 +148,10 @@
       color:#0b0b0c;
       border-color: rgba(255,255,255,.55);
     }
-    .btn.ghost{
-      background: transparent;
-    }
+    .btn.ghost{ background: transparent; }
+
     .divider{height:1px; background:rgba(255,255,255,.10); margin:18px 0}
+
     .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px}
     .chip{
       background: rgba(255,255,255,.06);
@@ -103,6 +161,7 @@
       font-size: 13px;
       color: var(--text);
     }
+
     .preview{
       background: rgba(0,0,0,.25);
       border:1px solid rgba(255,255,255,.10);
@@ -119,23 +178,59 @@
       font-size: 18px;
       letter-spacing:-.01em;
     }
+
     .job{padding: 14px 0; border-top:1px solid rgba(255,255,255,.10)}
     .job:first-of-type{border-top:none; padding-top:0}
     .job-head{display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between}
     .job-title{font-weight:800}
     .job-meta{color:var(--muted)}
+
     ul{margin:10px 0 0 18px}
     li{margin:6px 0}
     .small{font-size:12px; color:var(--muted)}
+
+    /* Dissolve overlay */
+    .dissolve{
+      pointer-events:none;
+      position: fixed;
+      inset: 0;
+      opacity: 0;
+      background:
+        radial-gradient(1200px 700px at 20% 20%, rgba(255,255,255,.16), transparent 60%),
+        radial-gradient(900px 650px at 80% 40%, rgba(255,255,255,.10), transparent 55%),
+        rgba(11,11,12,.75);
+      transition: opacity .35s ease, filter .35s ease;
+    }
+    .dissolve.on{
+      opacity: 1;
+      filter: blur(6px);
+    }
+
     @media (max-width: 820px){
       .row, .row3{grid-template-columns:1fr}
       h1{font-size:38px}
+      .nav-inner{align-items:flex-start}
     }
   </style>
 </head>
+
 <body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">Resume Builder</a>
+      <nav class="tabs">
+        <a class="tab {{ 'on' if active_tab=='builder' else '' }}" href="/">Resume Builder</a>
+        <a class="tab {{ 'on' if active_tab=='templates' else '' }}" href="/templates">Templates + PDF</a>
+        <a class="tab {{ 'on' if active_tab=='guided' else '' }}" href="/guided">Guided questions</a>
+      </nav>
+    </div>
+  </header>
+
   <div class="wrap">
     {% block content %}{% endblock %}
   </div>
+
+  <div id="dissolve" class="dissolve" aria-hidden="true"></div>
 </body>
 </html>
+
